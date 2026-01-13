@@ -77,5 +77,5 @@ Write-Host ""
 Write-Host "Test: Open Excel, try Power Query, then try BigHand" -ForegroundColor White
 Write-Host ""
 Write-Host "If BigHand breaks, restore with:" -ForegroundColor Gray
-Write-Host '  Get-ChildItem "$env:ProgramFiles\BigHand\BigHand Document Creation\*.disabled" | Rename-Item -NewName { $_.Name -replace "\.disabled$","" }' -ForegroundColor Gray
-Write-Host '  Get-ChildItem "$env:ProgramFiles\BigHand\BigHand Document Creation\*.bak2" | ForEach-Object { Copy-Item $_.FullName ($_.FullName -replace "\.bak2$","") -Force }' -ForegroundColor Gray
+Write-Host '  Get-ChildItem "C:\Program Files\BigHand\BigHand Document Creation\*.disabled" | Rename-Item -NewName { $_.Name -replace "\.disabled$","" }' -ForegroundColor Gray
+Write-Host '  Get-ChildItem "C:\Program Files\BigHand\BigHand Document Creation\*.bak2" | ForEach-Object { Copy-Item $_.FullName ($_.FullName -replace "\.bak2$","") -Force }' -ForegroundColor Gray
