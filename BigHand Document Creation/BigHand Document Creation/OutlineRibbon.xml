@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="RibbonLoad"
+					xmlns:outline="Iphelion.Outline.CustomUI"
+		xmlns:mso="http://schemas.microsoft.com/office/2009/07/customui"
+		loadImage="LoadImage">
+	<commands>
+		<command idMso="FileNewDefault" onAction="FileNewOverride"/>
+		<command idMso="PrintPreviewAndPrint" onAction="FilePrintOverride"/>
+	</commands>
+	<ribbon startFromScratch="false">
+		<tabs>
+			<tab idQ="outline:TabOutline" label="Document Creation" insertAfterMso="TabHome" keytip="X">
+				<group idQ="outline:GrpAuthor" label="Author" insertBeforeQ="outline:GrpDesigner">
+					<dropDown id="DdAuthor" onAction="DdAuthorOnAction" label="Author" showImage="true"
+										image="Icon_16_AuthorList" sizeString="1234567812345678" getItemCount="DdAuthorGetItemCount"
+										getItemLabel="DdAuthorGetItemLabel" getSelectedItemIndex="DdAuthorGetSelectedItemIndex"
+										screentip="Click dropdown to select a different author" keytip="A" />
+					<dropDown id="DdOffice" onAction="DdOfficeOnAction" label="Office" showImage="true" image="Icon_16_Office"
+										sizeString="1234567812345678" getItemCount="DdOfficeGetItemCount" getItemLabel="DdOfficeGetItemLabel"
+										getSelectedItemIndex="DdOfficeGetSelectedItemIndex" screentip="Click dropdown to select a different office" keytip="O" />
+					<!--<dropDown id="DdEntity" onAction="DdEntityOnAction" label="Entity" showImage="true" image="Icon_16_Entity"
+										sizeString="1234567812345678" getItemCount="DdEntityGetItemCount" getItemLabel="DdEntityGetItemLabel"
+										getSelectedItemIndex="DdEntityGetSelectedItemIndex" screentip="Click dropdown to select a different entity" keytip="E" />-->
+					<dropDown id="DdLanguage" onAction="DdLanguageOnAction" label="Language" showImage="true"
+										image="Icon_16_Languages" sizeString="1234567812345678" getItemCount="DdLanguageGetItemCount"
+										getItemLabel="DdLanguageGetItemLabel" getSelectedItemIndex="DdLanguageGetSelectedItemIndex"
+										screentip="Click dropdown to select a different language" keytip="G" />
+					<dialogBoxLauncher>
+						<button id="EditAuthors" onAction="EditAuthorsOnAction" screentip="Edit your author list" keytip="U" />
+					</dialogBoxLauncher>
+				</group>
+				<group idQ="outline:GrpWizard" insertBeforeQ="outline:GrpDesigner">
+					<button id="ShowFormButton" image="Icon_32_TemplateWizard" label="Show Wizard" onAction="ShowFormOnAction"
+									size="large" getEnabled="ShowWizardGetEnabled" keytip="W" />
+					<!--<button id="ShowSmartBlockFormButton" image="Icon_32_TemplateWizard" label="Show Smart Blocks" onAction="ShowSmartBlockFormOnAction"
+									size="large" getEnabled="ShowSmartBlockFormGetEnabled" keytip="SB" />-->
+				</group>
+				<group idQ="outline:GrpTemplates" label="Templates" insertBeforeQ="outline:GrpDesigner">
+					<!--<button id="BtnLetter" image="Icon_32_Template" onAction="OpenTemplateAction"
+									tag="Letter.dotx" label="Letter" screentip="Create a letter using current author details" size="large" keytip="L" />
+					<button id="BtnEnvelope" image="Icon_32_EnvelopeCreationV2" onAction="OpenTemplateAction"
+									tag="Envelope.dotx" label="Envelope" screentip="Create a envelope" size="large" keytip="E" />-->
+					<button id="BtnOther" image="Icon_32_OtherTemplates" onAction="OpenOtherAction" label="All Templates"
+									screentip="Display a list of all available templates" size="large" keytip="T" />
+					<button id="BtnFromExistingWithContent"  image="Icon_64_Recycle" label="Content Recycling" size="large" keytip="CE"
+									onAction="OpenOtherWithCopyAndContentAction" getEnabled="HasActiveDocumentCallback" screentip="Create a new document and pass in any current data" />
+					<!--<button id="BtnNewVersion"  image="Icon_32_CopyItem" label="Create new version" size="large" keytip="CV"
+									onAction="CreateVersionWithCopyAndContentAction" getEnabled="HasActiveDocumentCallback" screentip="Create a new version of the current document" />-->
+				</group>
+                <group idQ="outline:GrpPrecAuto" insertBeforeQ="outline:GrpDesigner" label="Precedent Automation">
+                    <button id="BtnAcceptToken" tag="acceptToken" label="Accept token" image="Icon_32_AcceptToken" getEnabled="RunCommandEnabled" size="large" onAction="RunCommandAction" />
+                    <button id="BtnDeclineToken" tag="declineToken" label="Decline token" image="Icon_32_DeclineToken" getEnabled="RunCommandEnabled" size="large" onAction="RunCommandAction" />
+                    <dynamicMenu id="BtnChoices" tag="getChoices" label="Choices" image="Icon_32_Choices" getEnabled="IsChoicesDropDownEnabled" size="large" getContent="GetChoices" />
+                    <button id="BtnPreviousToken" tag="goToPreviousToken" label="Previous token" image="Icon_32_ArrowLeft" size="large" onAction="RunCommandAction" />
+                    <button id="BtnNextToken" tag="goToNextToken" label="Next token" image="Icon_32_ArrowRight" size="large" onAction="RunCommandAction" />
+                    <button id="BtnHighlightTokens" tag="highlightTokens" label="Highlight tokens" image="Icon_32_HighlightTokens" size="large" onAction="RunCommandAction" />
+                </group>
+                <group idQ="outline:GrpFavourites" label=" " insertBeforeQ="outline:GrpDesigner">
+					<dynamicMenu id="BtnFavourites" size="large" image="Icon_32_FavouritesStar" label="Favourites" getContent="BtnFavouritesGetContent"
+											 screentip="Show a list of your favourite templates" keytip="F" />
+					<dialogBoxLauncher>
+						<button id="BtnTemplateFavs" screentip="Select your favourite templates" onAction="SelectFavouritesOnAction" label="Favourites" keytip="V" />
+					</dialogBoxLauncher>
+				</group>
+				<group idQ="outline:GrpPrint" label=" " insertBeforeQ="outline:GrpDesigner">
+					<button id="BtnPrint" size="large" image="Icon_32_PrinterDialog" label="Smart Print" onAction="BtnPrintOnAction"
+									getEnabled="CustomPrintGetEnabled" keytip="P" />
+					<button id="BtnManualPrint" size="large" image="Icon_32_PrinterDialog" label="Manual Print" onAction="BtnManualPrintOnAction"
+														getEnabled="CustomPrintGetEnabled" keytip="CP" />
+					<dialogBoxLauncher>
+						<button id="BtnPrinterSettings2" label="Printer Settings" onAction="BtnPrinterSettingsOnAction" screentip="Amend printer tray settings" keytip="R" />
+					</dialogBoxLauncher>
+				</group>
+				<group idQ="outline:GrpContent" label="Content" insertBeforeQ="outline:GrpDesigner" >
+					<!--<mso:control idQ="mso:CustomGallery2" size="large" label="Attestation Clauses" screentip="Attestation clause" />-->
+					<menu id="mnuInsertOther" label="Add/Remove Content" size="large" image="Icon_32_AddField" keytip="C" >
+						<button id="BtnInsertDate"  image="Icon_16_DateField" label="Date" onAction="RunCommandAction" getEnabled="RunCommandEnabled" tag="insertFormattedDate" screentip="Insert formatted date at the cursor position" />
+						<button id="BtnInsertDmsId" image="Icon_16_AddDocRef" label="Insert DMS Ref" onAction="RunCommandAction" getEnabled="RunCommandEnabled" tag="insertDmsId" screentip="Insert DMS reference at the cursor position" />
+						<menuSeparator id="sep1" />
+						<button id="BtnInsertDraft" label="Insert Draft Line" image="Icon_16_AddDocRef" onAction="RunCommandAction" getEnabled="RunCommandEnabled" getVisible="RunCommandVisible" tag="updateDraftLine" screentip="Insert or update the document draft line" />
+						<button id="BtnRemoveDraft" label="Remove Draft Line" image="Icon_16_ReferenceRemoval" onAction="RunCommandAction" getEnabled="RunCommandEnabled" getVisible="RunCommandVisible" tag="removeDraftLine" screentip="Remove the document draft line" />
+					</menu>
+					<button id="BtnBidLibrary" size="large" image="Icon_32_AddField" label="Bid Library" onAction="ToggleClauseBankOnAction" getEnabled="HasActiveDocumentCallback" tag="bidLibrary" />
+
+					<button id="ShowEndnotesButton" image="Icon_32_Endnotes" label="Show Endnotes" onAction="ShowEndnotesOnAction"
+									size="large" keytip="NO" getEnabled="HasActiveDocumentCallback" />
+					<button id="InsertDateButton" image="Icon_32_DateField" label="Insert Date" onAction="InsertDateOnAction"
+									size="large" keytip="ID" getEnabled="HasActiveDocumentCallback" />
+
+					<!--<dropDown id="DdInsertToc" onAction="DdInsertTocAction" showImage="false" getVisible="SelectTocVisible"
+											sizeString="1234567812345678" getItemCount="DdInsertTocGetItemCount" getEnabled="InsertTocEnabled"
+											getItemLabel="DdInsertTocGetItemLabel" getSelectedItemIndex="DbInsertTocGetSelectedItemIndex"
+											screentip="Click dropdown to select a different TOC configuration" keytip="T" />
+					<button id="BtnInsertToc" size="large" image="Icon_32_TOC" label="Insert TOC" onAction="BtnInsertTocAction" getVisible="InsertTocVisible" getEnabled="InsertTocEnabled" />-->
+					
+					<!--<splitButton id="BtnDocIdOptions" size="large" getVisible="InsertDocIdVisible" getEnabled="InsertDocIdEnabled">
+						<button id="BtnInsertDocId" image="Icon_64_AddDocRef" label="Doc ID Options" onAction="BtnInsertDocIdAction" />	
+						<menu id="MnuInsertDocId">
+							<button id="BtnRemoveDocId" image="Icon_64_ReferenceRemoval" label="Remove Doc ID" onAction="BtnRemoveDocIdAction" />
+						</menu>
+					</splitButton>-->
+
+					<!--<gallery id="GalApplyStyles" showItemLabel="true" image="Icon_32_HouseStyle" size="large" label="Apply Styles" columns="1"
+									 itemHeight="125" itemWidth="575" screentip="Change the documents style" supertip="Change the styles for numbering in the document"
+									 getEnabled="ApplyStylesGetEnabled" getItemCount="ApplyStylesItemCount" getVisible="ApplyStylesVisible"
+									 getItemID="ApplyStylesGetItemId" getItemLabel="ApplyStylesGetItemLabel" getItemImage="ApplyStylesGetItemImage" onAction="ApplyStylesOnAction">
+						<button id="BtnCurrentStyles" imageMso="Info" getLabel="CurrentStyleSetGetLabel" getEnabled="ApplyStylesGetEnabled" getVisible="ApplyStylesVisible"/>
+					</gallery>-->
+				</group>
+				<group idQ="outline:DocOptions" label="Document" insertBeforeQ="outline:GrpDesigner">
+					<!--<editBox id="QuickOpen" label="Quick Open" imageMso="FileOpen" onChange="RunCommandActionOnChange" getEnabled="RunCommandEnabled" getText="ClearValueGetText" screentip="Enter a WorkSite document number to open" keytip="OO" tag="openDmsDocument" />-->
+					<!--<button id="EditProfile" size="normal" label="Edit Profile" onAction="RunCommandAction" getEnabled="RunCommandEnabled" screentip="Edit the documents WorkSite profile" keytip="OP" tag="editDmsProfile" />-->
+					<button id="BtnMailMerge" size="large" imageMso="MailMergeFieldFormatMenu" label="Update for mail merge" getEnabled="MailMergeGetEnabled" onAction="MailMergeOnAction" screentip="Prepare the document for mail merge" keytip="M" />
+					<mso:control idQ="mso:FileSaveAsPdfOrXps" size="large" label="Save to PDF" screentip="Save Doc to PDF" keytip="S" />
+				</group>
+				<group idQ="outline:GrpHelp" label=" " insertBeforeQ="outline:GrpDesigner">
+					<button id="BtnOptions" size="large" image="Icon_32_Prefs" label="Options" onAction="ShowOptionsOnAction" screentip="Open Options" keytip="Q" />
+					<button id="BtnHelp" size="large" image="Icon_32_Help" label="Help" onAction="ShowHelpOnAction" screentip="Open Help" keytip="H" />
+					<dialogBoxLauncher>
+						<button id="AboutOutline" screentip="About Document Creation" onAction="AboutOutline" keytip="B" />
+					</dialogBoxLauncher>
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
+	<!-- Word 2013/2016 -->
+	<!--<backstage>
+		<tab idMso="TabOfficeStart" visible="false"/>
+		<button id="BtnBackStageNew" label="New" insertAfterMso="TabInfo" isDefinitive="true" onAction="OpenOtherAction" keytip="N" />
+	</backstage>-->
+	<!-- Word 2010 -->
+	<!--<backstage>
+		<tab idMso="TabNew" visible="false"/>
+		<button id="BtnBackStageNew" label="New" insertAfterMso="TabRecent" isDefinitive="true" onAction="OpenOtherAction" keytip="N" imageMso="FileNew" />
+	</backstage>-->
+</customUI>

@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" xmlns:outline="Iphelion.Outline.CustomUI" onLoad="RibbonLoad" loadImage="LoadImage">
+	<ribbon startFromScratch="false">
+		<tabs>
+			<tab idQ="outline:TabOutline" label="Document Creation" insertAfterMso="TabHome" keytip="X">
+				<group idQ="outline:GrpAuthor" label="Author" insertBeforeQ="outline:GrpDesigner">
+					<dropDown id="DdAuthor" onAction="DdAuthorOnAction" label="Author" showImage="true"
+										image="Icon_16_AuthorList" sizeString="1234567812345678" getItemCount="DdAuthorGetItemCount"
+										getItemLabel="DdAuthorGetItemLabel" getSelectedItemIndex="DdAuthorGetSelectedItemIndex"
+										screentip="Click dropdown to select a different author" keytip="A" />
+					<dropDown id="DdOffice" onAction="DdOfficeOnAction" label="Office" showImage="true" image="Icon_16_Office"
+										sizeString="1234567812345678" getItemCount="DdOfficeGetItemCount" getItemLabel="DdOfficeGetItemLabel"
+										getSelectedItemIndex="DdOfficeGetSelectedItemIndex" screentip="Click dropdown to select a different office" keytip="O" />
+					<dropDown id="DdLanguage" onAction="DdLanguageOnAction" label="Language" showImage="true"
+										image="Icon_16_Languages" sizeString="1234567812345678" getItemCount="DdLanguageGetItemCount"
+										getItemLabel="DdLanguageGetItemLabel" getSelectedItemIndex="DdLanguageGetSelectedItemIndex"
+										screentip="Click dropdown to select a different language" keytip="G" />
+					<dialogBoxLauncher>
+						<button id="EditAuthors" onAction="EditAuthorsOnAction" screentip="Edit your author list" keytip="U" />
+					</dialogBoxLauncher>
+				</group>
+				<group idQ="outline:GrpWizard" insertBeforeQ="outline:GrpDesigner">
+					<button id="ShowFormButton" image="Icon_32_TemplateWizard" label="Show Wizard" onAction="ShowFormOnAction" size="large" getEnabled="ShowWizardGetEnabled" keytip="W" />
+				</group>
+				<group idQ="outline:GrpTemplates" label="Templates" insertBeforeQ="outline:GrpDesigner">
+					<button id="BtnOther" image="Icon_32_OtherTemplates" onAction="OpenAction" label="All Templates"	screentip="Display a list of all available workbooks" size="large" keytip="T" />
+				</group>
+				<group idQ="outline:GrpContent" label="Content" insertBeforeQ="outline:GrpDesigner" >
+					<button id="BtnInsertDmsId" size="large" image="Icon_32_AddDocRef" label="Insert DMS Ref" onAction="RunCommandAction" getEnabled="RunCommandEnabled" tag="insertDmsId" screentip="Insert DMS reference at the cursor position" />
+				</group>
+				<group idQ="outline:GrpHelp" label=" " insertBeforeQ="outline:GrpDesigner">
+					<button id="BtnOptions" size="large" image="Icon_32_Prefs" label="Options" onAction="ShowOptionsOnAction" screentip="Open Options" keytip="Q" />
+					<button id="BtnHelp" size="large" image="Icon_32_Help" label="Help" onAction="ShowHelpOnAction" screentip="Open Help" keytip="H" />
+					<dialogBoxLauncher>
+						<button id="AboutOutline" screentip="About Document Creation" onAction="AboutOutline" keytip="B" />
+					</dialogBoxLauncher>
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
+</customUI>
+

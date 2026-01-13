@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <word>
+    <entrypoints>
+      <entrypoint class="Iphelion.Outline.Integration.WorkSite.PlugIn.FieldUpdatePlugIn" resource="Iphelion.Outline.Integration.WorkSite.PlugIn.sideload_config.txt">
+        <assemblyIdentity name="Iphelion.Outline.Integration.WorkSite.PlugIn" version="$$VERSION$$" publicKeyToken="8f23737f60514f0a" language="neutral" processorArchitecture="msil" />
+        <provider name="iManage">BigHand Document Creation Office Plug-In</provider>
+      </entrypoint>
+    </entrypoints>
+  </word>
+  <powerpoint>
+    <entrypoints>
+      <entrypoint class="Iphelion.Outline.Integration.WorkSite.PlugIn.FieldUpdatePlugIn" resource="Iphelion.Outline.Integration.WorkSite.PlugIn.sideload_config.txt">
+        <assemblyIdentity name="Iphelion.Outline.Integration.WorkSite.PlugIn" version="$$VERSION$$" publicKeyToken="8f23737f60514f0a" language="neutral" processorArchitecture="msil" />
+        <provider name="iManage">BigHand Document Creation Office Plug-In</provider>
+      </entrypoint>
+    </entrypoints>
+  </powerpoint>
+  <excel>
+    <entrypoints>
+      <entrypoint class="Iphelion.Outline.Integration.WorkSite.PlugIn.FieldUpdatePlugIn" resource="Iphelion.Outline.Integration.WorkSite.PlugIn.sideload_config.txt">
+        <assemblyIdentity name="Iphelion.Outline.Integration.WorkSite.PlugIn" version="$$VERSION$$" publicKeyToken="8f23737f60514f0a" language="neutral" processorArchitecture="msil" />
+        <provider name="iManage">BigHand Document Creation Office Plug-In</provider>
+      </entrypoint>
+    </entrypoints>
+  </excel>
+</configuration>

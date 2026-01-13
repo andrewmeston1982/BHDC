@@ -1,0 +1,340 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="officeInformation">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="country">
+          <xs:complexType mixed="true">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="office">
+                <xs:complexType mixed="true">
+                  <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="entity">
+                      <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="17">
+                          <xs:element minOccurs="0" maxOccurs="1" name="displayName" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="entityName1" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="entityName2" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="entityName3" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="entityName4" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="reference" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer1" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer2" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer3" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer4" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer5" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="disclaimer6" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="settings" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="email" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="url" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="phoneNo" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="faxNo" type="xs:string" />
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="1" name="buildingAddress">
+                      <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="6">
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine1" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine2" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine3" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine4" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine5" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="buildingAddressLine6" type="xs:string" />
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="1" name="postalAddress">
+                      <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="6">
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine1" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine2" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine3" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine4" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine5" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="postalAddressLine6" type="xs:string" />
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="1" name="officeURL" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="email" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="phoneNumberFormat" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="phoneNumberFormat2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="phoneNumberFormat3" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="faxNumberFormat" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="faxNumberFormat2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="faxNumberFormat3" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="mobileNumberFormat" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="mobileNumberFormat2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="mobileNumberFormat3" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="switchboardNo" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="switchboardNo2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="faxNo" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="faxNo2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="taxNo" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="dx" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="dx2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="dx3" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="nonWorkingDays" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="index" type="xs:int" nillable="true" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="settings" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="bankDetails">
+                      <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="16">
+                          <xs:element minOccurs="0" maxOccurs="1" name="displayName" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="currencyName" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="currencyIsoCode" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankAccountName" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankAccountNo" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankSortCode" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankName" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankAddress" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankIban" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankSwift" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankCode" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankCheckDigits" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="bankText" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="currencySymbol" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="currencyPositivePattern" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="currencyNegativePattern" type="xs:string" />
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="1" name="disclaimer">
+                      <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="8">
+                          <xs:element minOccurs="0" maxOccurs="1" name="firm" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="firmDb" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="firmDb2" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="firmDb3" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="firmDb4" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="partnerDefinition" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="partnerDefinitionDb" type="xs:string" />
+                          <xs:element minOccurs="0" maxOccurs="1" name="extraText" type="xs:string" />
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" maxOccurs="1" name="properties">
+                      <xs:complexType>
+                        <xs:group ref="propertiesGroup"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:choice>
+                  <xs:attribute name="id" type="xs:string" use="required" />
+                  <xs:attribute name="location" type="xs:string" use="required" />
+                  <xs:attribute name="type" type="xs:string" use="optional" />
+                  <xs:attribute name="reference" type="xs:string" use="optional" />
+                  <xs:attribute name="displayName" type="xs:string" use="optional" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="disclaimer">
+                <xs:complexType>
+                  <xs:choice minOccurs="0" maxOccurs="8">
+                    <xs:element minOccurs="0" maxOccurs="1" name="firm" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="firmDb" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="firmDb2" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="firmDb3" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="firmDb4" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="partnerDefinition" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="partnerDefinitionDb" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="extraText" type="xs:string" />
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="fullName" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="lawyerList" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="consultantList" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="nonWorkingDays" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="reference" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="vatName" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="settings" type="xs:string" />
+              <xs:element minOccurs="0" maxOccurs="1" name="properties">
+                <xs:complexType>
+                  <xs:group ref="propertiesGroup"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="documentSettings">
+                <xs:complexType>
+                  <xs:choice minOccurs="0" maxOccurs="6">
+                    <xs:element name="pageHeight" type="xs:string" nillable="true" />
+                    <xs:element name="pageWidth" type="xs:string" nillable="true" />
+                    <xs:element name="topMargin" type="xs:string" nillable="true" />
+                    <xs:element name="bottomMargin" type="xs:string" nillable="true" />
+                    <xs:element name="leftMargin" type="xs:string" nillable="true" />
+                    <xs:element name="rightMargin" type="xs:string" nillable="true" />
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="vatTaxRate">
+                <xs:complexType>
+                  <xs:choice minOccurs="0" maxOccurs="3">
+                    <xs:element minOccurs="0" maxOccurs="1" name="name" type="xs:string" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="rate" type="xs:string" nillable="true" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="default" type="xs:boolean" />
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="name" type="xs:string" use="optional" />
+            <xs:attribute name="placeholder" type="xs:boolean" use="optional" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" maxOccurs="1" name="officeList" type="xs:string" />
+        <xs:element minOccurs="0" maxOccurs="1" name="associateOfficeList" type="xs:string" />
+        <xs:element minOccurs="0" maxOccurs="1" name="properties">
+          <xs:complexType>
+            <xs:group ref="propertiesGroup"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" maxOccurs="1" name="labels">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="label">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="id" type="xs:string" use="required" />
+                      <xs:attribute name="group" type="xs:string" use="optional" />
+                      <xs:attribute name="name" type="xs:string" use="required" />
+                      <xs:attribute name="labelType" type="xs:string" use="optional" />
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" maxOccurs="1" name="labelSets">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="labelSet">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="label" type="xs:string" />
+                  </xs:sequence>
+                  <xs:attribute name="id" type="xs:string" use="optional" />
+                  <xs:attribute name="group" type="xs:string" use="optional" />
+                  <xs:attribute name="name" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" maxOccurs="1" name="epistolary">
+          <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="5">
+              <xs:element minOccurs="0" maxOccurs="1" name="titles">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="title">
+                      <xs:complexType>
+                        <xs:attribute name="id" type="xs:string" use="required" />
+                        <xs:attribute name="text" type="xs:string" use="required" />
+                        <xs:attribute name="default" type="xs:boolean" use="optional" />
+                        <xs:attribute name="format" type="xs:string" use="optional" />
+                        <xs:attribute name="gender" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="addressees">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="addressee">
+                      <xs:complexType>
+                        <xs:attribute name="id" type="xs:string" use="required" />
+                        <xs:attribute name="text" type="xs:string" use="required" />
+                        <xs:attribute name="default" type="xs:boolean" use="optional" />
+                        <xs:attribute name="format" type="xs:string" use="optional" />
+                        <xs:attribute name="formatType" type="xs:string" use="optional" />
+                        <xs:attribute name="formatNameOnly" type="xs:string" use="optional" />
+                        <xs:attribute name="formatNameOnlyType" type="xs:string" use="optional" />
+						<xs:attribute name="formatMultipleAddressee" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="prefixes">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="prefix">
+                      <xs:complexType>
+                        <xs:attribute name="id" type="xs:string" use="required" />
+                        <xs:attribute name="text" type="xs:string" use="required" />
+                        <xs:attribute name="default" type="xs:boolean" use="optional" />
+                        <xs:attribute name="format" type="xs:string" use="optional" />
+                        <xs:attribute name="formatType" type="xs:string" use="optional" />
+                        <xs:attribute name="gender" type="xs:string" use="optional" />
+                        <xs:attribute name="groupId" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="salutations" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="salutation">
+                      <xs:complexType>
+                        <xs:attribute name="id" type="xs:string" use="required" />
+                        <xs:attribute name="text" type="xs:string" use="required" />
+                        <xs:attribute name="closeId" type="xs:string" use="required" />
+                        <xs:attribute name="default" type="xs:boolean" use="optional" />
+                        <xs:attribute name="format" type="xs:string" use="optional" />
+                        <xs:attribute name="formatType" type="xs:string" use="optional" />
+                        <xs:attribute name="excludeClosings" type="xs:string" use="optional" />
+                        <xs:attribute name="gender" type="xs:string" use="optional" />
+                        <xs:attribute name="groupId" type="xs:string" use="optional" />
+                        <xs:attribute name="prefixId" type="xs:string" use="optional" />
+                        <xs:attribute name="excludePrefixes" type="xs:string" use="optional" />
+                        <xs:attribute name="separator" type="xs:string" use="optional" default=", " />
+                        <xs:attribute name="finalSeparator" type="xs:string" use="optional" default=", " />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element minOccurs="0" maxOccurs="1" name="closings">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="close">
+                      <xs:complexType>
+                        <xs:attribute name="id" type="xs:string" use="required" />
+                        <xs:attribute name="text" type="xs:string" use="required" />
+                        <xs:attribute name="default" type="xs:boolean" use="optional" />
+                        <xs:attribute name="format" type="xs:string" use="optional" />
+                        <xs:attribute name="formatType" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+      <xs:attribute name="id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:group name="propertiesGroup">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="property">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="id" type="xs:string" use="required" />
+              <xs:attribute name="name" type="xs:string" use="required" />
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
+
+</xs:schema>
