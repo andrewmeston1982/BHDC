@@ -314,6 +314,125 @@ class TravelTimeClient:
         return (time1, time2)
 
 
+    def get_isochrone(
+        self,
+        origin_coords: Tuple[float, float],
+        travel_time_mins: int = 60,
+        arrival_hour: int = 9,
+        transport_type: str = "public_transport"
+    ) -> Optional[List[List[Tuple[float, float]]]]:
+        """
+        Get isochrone (time map) - the shape of everywhere reachable within the time limit.
+
+        Returns list of polygon shells, each as list of (lat, lon) tuples.
+        The first polygon is the outer boundary, others are holes.
+        """
+
+        payload = {
+            "arrival_searches": [{
+                "id": "isochrone",
+                "coords": {"lat": origin_coords[0], "lng": origin_coords[1]},
+                "arrival_time": self._get_arrival_time(arrival_hour, 0),
+                "travel_time": travel_time_mins * 60,
+                "transportation": {"type": transport_type}
+            }]
+        }
+
+        data = self._make_request("time-map", payload)
+
+        if not data or "results" not in data:
+            return None
+
+        polygons = []
+        for result in data.get("results", []):
+            for shape in result.get("shapes", []):
+                shell = shape.get("shell", [])
+                if shell:
+                    # Convert to (lat, lon) tuples
+                    polygon = [(p["lat"], p["lng"]) for p in shell]
+                    polygons.append(polygon)
+
+        return polygons if polygons else None
+
+    def get_intersection_stations(
+        self,
+        work1_coords: Tuple[float, float],
+        work1_max_mins: int,
+        work2_coords: Tuple[float, float],
+        work2_max_mins: int,
+        stations: List[Tuple[str, str, float, float]],  # (name, postcode, lat, lon)
+        arrival_hour: int = 9
+    ) -> List[Tuple[str, str, float, float, int, int]]:
+        """
+        Find stations reachable from BOTH workplaces using the intersection method.
+
+        1. Get all stations reachable from work1
+        2. Of those, check which are also reachable from work2
+        3. Return stations with times to both
+
+        Returns: [(name, postcode, lat, lon, time_to_work1, time_to_work2), ...]
+        """
+
+        # Step 1: Bulk check all stations -> work1
+        station_list = [(f"{name}|{postcode}", lat, lon) for name, postcode, lat, lon in stations]
+
+        times_to_work1 = self.time_filter_batch(
+            work1_coords,
+            station_list,
+            max_travel_time_mins=work1_max_mins,
+            arrival_hour=arrival_hour
+        )
+
+        # Filter to reachable from work1
+        reachable = {k: v for k, v in times_to_work1.items() if v is not None}
+
+        if not reachable:
+            return []
+
+        # Step 2: Check those stations -> work2
+        filtered = [(sid, lat, lon) for sid, lat, lon in station_list if sid in reachable]
+
+        times_to_work2 = self.time_filter_batch(
+            work2_coords,
+            filtered,
+            max_travel_time_mins=work2_max_mins,
+            arrival_hour=arrival_hour
+        )
+
+        # Build results
+        results = []
+        station_dict = {f"{name}|{postcode}": (name, postcode, lat, lon) for name, postcode, lat, lon in stations}
+
+        for station_id, time1 in reachable.items():
+            time2 = times_to_work2.get(station_id)
+            if time2 is not None:
+                name, postcode, lat, lon = station_dict[station_id]
+                results.append((name, postcode, lat, lon, time1, time2))
+
+        # Sort by combined time
+        results.sort(key=lambda x: x[4] + x[5])
+
+        return results
+
+
+def point_in_polygon(point: Tuple[float, float], polygon: List[Tuple[float, float]]) -> bool:
+    """Check if a point is inside a polygon using ray casting algorithm."""
+    x, y = point
+    n = len(polygon)
+    inside = False
+
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+
+    return inside
+
+
 def geocode_postcode(postcode: str) -> Optional[Tuple[float, float]]:
     """
     Geocode a UK postcode to lat/lon using postcodes.io (free, no API key needed).

@@ -338,6 +338,8 @@ class AutoScannerGUI:
 
         ttk.Button(btn_frame, text="📊 Export CSV", command=self._export, width=15).pack(pady=2)
 
+        ttk.Button(btn_frame, text="🗺️ View Map", command=self._show_map, width=15).pack(pady=2)
+
     def _test_traveltime(self):
         """Test TravelTime API connection"""
         if not TRAVELTIME_AVAILABLE:
@@ -809,6 +811,161 @@ class AutoScannerGUI:
                     writer.writerow([r.name, r.postcode, f"{r.distance_km:.1f}",
                                    f"{r.your_commute_mins}", f"{r.partner_commute_mins}", f"{r.combined_mins}"])
             messagebox.showinfo("Exported", f"Saved {len(self.results)} results to {filename}")
+
+    def _show_map(self):
+        """Generate and show an interactive map with isochrones and stations"""
+        if not self.results:
+            messagebox.showwarning("No Results", "Run a scan first!")
+            return
+
+        # Get work coordinates
+        if not self._geocode_workplaces():
+            return
+
+        self.progress_var.set("Generating map with isochrones...")
+        self.root.update()
+
+        # Get isochrones if TravelTime available
+        your_isochrone = None
+        partner_isochrone = None
+
+        if self.traveltime:
+            try:
+                your_isochrone = self.traveltime.get_isochrone(
+                    self.your_work_coords,
+                    self.your_max_var.get(),
+                    self.arrival_var.get()
+                )
+                partner_isochrone = self.traveltime.get_isochrone(
+                    self.partner_work_coords,
+                    self.partner_max_var.get(),
+                    self.arrival_var.get()
+                )
+            except Exception as e:
+                print(f"Could not get isochrones: {e}")
+
+        # Generate HTML map
+        html = self._generate_map_html(your_isochrone, partner_isochrone)
+
+        # Save and open
+        map_file = Path(__file__).parent / "commute_map.html"
+        with open(map_file, 'w') as f:
+            f.write(html)
+
+        webbrowser.open(f"file://{map_file.absolute()}")
+        self.progress_var.set(f"Map opened in browser - saved to {map_file.name}")
+
+    def _generate_map_html(self, your_isochrone, partner_isochrone) -> str:
+        """Generate Leaflet HTML map"""
+
+        # Station markers
+        markers_js = ""
+        for r in self.results:
+            popup = f"{r.name} ({r.postcode})<br>You: {r.your_commute_mins}min | Partner: {r.partner_commute_mins}min"
+            markers_js += f"""
+        L.marker([{r.lat}, {r.lon}])
+            .addTo(map)
+            .bindPopup("{popup}");
+"""
+
+        # Work location markers
+        if self.your_work_coords:
+            markers_js += f"""
+        L.marker([{self.your_work_coords[0]}, {self.your_work_coords[1]}], {{
+            icon: L.divIcon({{className: 'work-marker', html: '🏢', iconSize: [30, 30]}})
+        }}).addTo(map).bindPopup("Your workplace: {self.your_work_var.get()}");
+"""
+        if self.partner_work_coords:
+            markers_js += f"""
+        L.marker([{self.partner_work_coords[0]}, {self.partner_work_coords[1]}], {{
+            icon: L.divIcon({{className: 'work-marker', html: '🏛️', iconSize: [30, 30]}})
+        }}).addTo(map).bindPopup("Partner workplace: {self.partner_work_var.get()}");
+"""
+
+        # Isochrone polygons
+        isochrone_js = ""
+        if your_isochrone:
+            for polygon in your_isochrone:
+                coords = [[p[0], p[1]] for p in polygon]
+                isochrone_js += f"""
+        L.polygon({coords}, {{color: 'blue', fillOpacity: 0.15, weight: 2}})
+            .addTo(map)
+            .bindPopup("Your commute zone: {self.your_max_var.get()} mins");
+"""
+        if partner_isochrone:
+            for polygon in partner_isochrone:
+                coords = [[p[0], p[1]] for p in polygon]
+                isochrone_js += f"""
+        L.polygon({coords}, {{color: 'red', fillOpacity: 0.15, weight: 2}})
+            .addTo(map)
+            .bindPopup("Partner commute zone: {self.partner_max_var.get()} mins");
+"""
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Commute Search Results Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {{ margin: 0; padding: 0; }}
+        #map {{ width: 100%; height: 100vh; }}
+        .work-marker {{ font-size: 24px; text-align: center; }}
+        .legend {{
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }}
+        .legend h4 {{ margin: 0 0 10px 0; }}
+        .legend-item {{ margin: 5px 0; }}
+        .legend-color {{
+            display: inline-block;
+            width: 20px;
+            height: 10px;
+            margin-right: 5px;
+        }}
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([51.5, 0.0], 9);
+
+        L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+            attribution: '© OpenStreetMap contributors'
+        }}).addTo(map);
+
+        // Isochrones (draw first so stations appear on top)
+        {isochrone_js}
+
+        // Station markers
+        {markers_js}
+
+        // Legend
+        var legend = L.control({{position: 'bottomright'}});
+        legend.onAdd = function(map) {{
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = '<h4>Commute Zones</h4>' +
+                '<div class="legend-item"><span class="legend-color" style="background: blue; opacity: 0.3;"></span> Your zone ({self.your_max_var.get()} mins)</div>' +
+                '<div class="legend-item"><span class="legend-color" style="background: red; opacity: 0.3;"></span> Partner zone ({self.partner_max_var.get()} mins)</div>' +
+                '<div class="legend-item"><span class="legend-color" style="background: purple; opacity: 0.3;"></span> Overlap (sweet spot!)</div>' +
+                '<div class="legend-item">📍 {len(self.results)} matching stations</div>';
+            return div;
+        }};
+        legend.addTo(map);
+
+        // Fit bounds to show all markers
+        var bounds = L.latLngBounds([
+            {[[r.lat, r.lon] for r in self.results]}
+        ]);
+        if (bounds.isValid()) {{
+            map.fitBounds(bounds.pad(0.1));
+        }}
+    </script>
+</body>
+</html>"""
+        return html
 
     def run(self):
         self.root.mainloop()
