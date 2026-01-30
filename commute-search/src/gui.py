@@ -203,9 +203,11 @@ class AutoScannerGUI:
         ttk.Label(row2, text="km").pack(side="left", padx=(0, 30))
 
         ttk.Label(row2, text="Arrive by:").pack(side="left")
-        self.arrival_var = tk.IntVar(value=9)
-        ttk.Spinbox(row2, from_=6, to=12, textvariable=self.arrival_var, width=4).pack(side="left", padx=5)
-        ttk.Label(row2, text=":00").pack(side="left", padx=(0, 30))
+        self.arrival_hour_var = tk.IntVar(value=9)
+        ttk.Spinbox(row2, from_=6, to=12, textvariable=self.arrival_hour_var, width=3).pack(side="left", padx=2)
+        ttk.Label(row2, text=":").pack(side="left")
+        self.arrival_min_var = tk.IntVar(value=0)
+        ttk.Spinbox(row2, from_=0, to=30, increment=30, textvariable=self.arrival_min_var, width=3, format="%02.0f").pack(side="left", padx=(2, 30))
 
         self.scan_btn = ttk.Button(row2, text="🔍 SCAN ALL STATIONS", command=self._start_scan, style="Accent.TButton")
         self.scan_btn.pack(side="left", padx=20)
@@ -434,7 +436,8 @@ class AutoScannerGUI:
         """Perform scan using TravelTime API (FAST - bulk queries)"""
         your_max = self.your_max_var.get()
         partner_max = self.partner_max_var.get()
-        arrival = self.arrival_var.get()
+        arrival_hour = self.arrival_hour_var.get()
+        arrival_min = self.arrival_min_var.get()
         radius = self.radius_var.get()
 
         # Get stations within radius
@@ -455,7 +458,8 @@ class AutoScannerGUI:
             self.your_work_coords,
             station_list,
             max_travel_time_mins=your_max,
-            arrival_hour=arrival
+            arrival_hour=arrival_hour,
+            arrival_minute=arrival_min
         )
 
         if not self.scanning:
@@ -474,7 +478,8 @@ class AutoScannerGUI:
             self.partner_work_coords,
             filtered_stations,
             max_travel_time_mins=partner_max,
-            arrival_hour=arrival
+            arrival_hour=arrival_hour,
+            arrival_minute=arrival_min
         )
 
         if not self.scanning:
@@ -529,7 +534,7 @@ class AutoScannerGUI:
         partner_work = self.partner_work_var.get()
         your_max = self.your_max_var.get()
         partner_max = self.partner_max_var.get()
-        arrival = self.arrival_var.get()
+        arrival_hour = self.arrival_hour_var.get()
         radius = self.radius_var.get()
 
         # Get stations within radius
@@ -564,7 +569,7 @@ class AutoScannerGUI:
                 your_changes = self.cache[cache_key_you].get('changes', 0)
             else:
                 try:
-                    result = self.google.get_commute_time(f"{name}, UK", f"{your_work}, London, UK", arrival)
+                    result = self.google.get_commute_time(f"{name}, UK", f"{your_work}, London, UK", arrival_hour)
                     if result:
                         your_mins = result['fastest_mins']
                         your_changes = result.get('num_changes', 0)
@@ -582,7 +587,7 @@ class AutoScannerGUI:
                 partner_changes = self.cache[cache_key_partner].get('changes', 0)
             else:
                 try:
-                    result = self.google.get_commute_time(f"{name}, UK", f"{partner_work}, London, UK", arrival)
+                    result = self.google.get_commute_time(f"{name}, UK", f"{partner_work}, London, UK", arrival_hour)
                     if result:
                         partner_mins = result['fastest_mins']
                         partner_changes = result.get('num_changes', 0)
@@ -714,7 +719,10 @@ class AutoScannerGUI:
 
     def _generate_rightmove_url(self, r: StationResult) -> str:
         """Generate Rightmove URL"""
-        url = f"https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=OUTCODE%5E{r.postcode}&searchType=SALE"
+        # Use search by location name - more reliable than OUTCODE lookup
+        from urllib.parse import quote
+        search_location = quote(f"{r.name}, {r.postcode}")
+        url = f"https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation={search_location}&useLocationIdentifier=false&locationIdentifier=&radius=1.0"
 
         types = []
         if self.detached_var.get(): types.append("detached")
@@ -786,8 +794,18 @@ class AutoScannerGUI:
     def _open_otm(self):
         r = self._get_selected()
         if r:
-            url = f"https://www.onthemarket.com/for-sale/property/{r.name.lower().replace(' ','-')}/"
+            from urllib.parse import quote
+            location = r.name.lower().replace(' ', '-').replace("'", "")
+            url = f"https://www.onthemarket.com/for-sale/property/{location}/"
             url += f"?min-bedrooms={self.min_beds_var.get()}&max-bedrooms={self.max_beds_var.get()}"
+
+            try:
+                if self.min_price_var.get():
+                    url += f"&min-price={int(self.min_price_var.get().replace(',',''))}"
+                if self.max_price_var.get():
+                    url += f"&max-price={int(self.max_price_var.get().replace(',',''))}"
+            except: pass
+
             webbrowser.open(url)
 
     def _export(self):
@@ -834,12 +852,12 @@ class AutoScannerGUI:
                 your_isochrone = self.traveltime.get_isochrone(
                     self.your_work_coords,
                     self.your_max_var.get(),
-                    self.arrival_var.get()
+                    self.arrival_hour_var.get()
                 )
                 partner_isochrone = self.traveltime.get_isochrone(
                     self.partner_work_coords,
                     self.partner_max_var.get(),
-                    self.arrival_var.get()
+                    self.arrival_hour_var.get()
                 )
             except Exception as e:
                 print(f"Could not get isochrones: {e}")
