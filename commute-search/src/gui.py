@@ -34,10 +34,9 @@ except ImportError:
 # Your API keys (update these)
 GOOGLE_MAPS_API_KEY = "AIzaSyDSrJIn4ckG430oRbwjQg6TAgg46DhEi1Y"
 
-# TravelTime credentials - set these if you have them
-# Get yours at: https://traveltime.com/
-TRAVELTIME_APP_ID = ""
-TRAVELTIME_API_KEY = ""
+# TravelTime credentials
+TRAVELTIME_APP_ID = "83084a5c"
+TRAVELTIME_API_KEY = "ac765163ccc6e231d5365fed17489c45"
 
 
 @dataclass
