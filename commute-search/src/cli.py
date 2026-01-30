@@ -17,9 +17,10 @@ import argparse
 import sys
 from typing import List, Optional
 
-from commute_search import CommuteSearch, CommuteResult
+from commute_search import CommuteSearch, CommuteResult, GOOGLE_MAPS_API_KEY
 from locations import ALL_LOCATIONS, Location, distance_from_london
 from tfl_client import TfLJourneyPlanner
+from google_maps_client import GoogleMapsClient
 
 
 def progress_bar(current: int, total: int, location: str, width: int = 40):
@@ -38,7 +39,9 @@ def cmd_search(args):
     print("=" * 70)
     print()
 
-    search = CommuteSearch()
+    # Determine which API to use
+    use_google = not getattr(args, 'tfl_only', False)
+    search = CommuteSearch(use_google=use_google)
 
     print(f"Your workplace: {search.YOUR_WORKPLACE_NAME}")
     print(f"Wife's workplace: {search.WIFE_WORKPLACE_NAME}")
@@ -46,8 +49,9 @@ def cmd_search(args):
     print(f"Wife's max commute: {args.wife_max} mins")
     print()
 
-    print(f"Searching {len(ALL_LOCATIONS)} locations (this may take a few minutes)...")
-    print("Using cached data where available, querying TfL API for new locations.\n")
+    api_name = "Google Maps" if search.use_google else "TfL"
+    print(f"Searching {len(ALL_LOCATIONS)} locations using {api_name} API...")
+    print("Using cached data where available, querying API for new locations.\n")
 
     # Run search with progress
     def progress(current, total, name):
@@ -333,6 +337,14 @@ Examples:
     search_parser.add_argument(
         "--export", action="store_true",
         help="Export results to CSV and JSON"
+    )
+    search_parser.add_argument(
+        "--tfl-only", action="store_true",
+        help="Use TfL API only (skip Google Maps)"
+    )
+    search_parser.add_argument(
+        "--refresh", action="store_true",
+        help="Ignore cache and fetch fresh journey times"
     )
     search_parser.set_defaults(func=cmd_search)
 

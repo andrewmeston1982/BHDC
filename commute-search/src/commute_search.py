@@ -20,10 +20,14 @@ from pathlib import Path
 import sys
 
 from tfl_client import TfLJourneyPlanner, JourneyOption
+from google_maps_client import GoogleMapsClient
 from locations import (
     ALL_LOCATIONS, Location, distance_from_london,
     FITZROVIA, HACKNEY, haversine_distance_km
 )
+
+# Your Google Maps API key - get one at https://console.cloud.google.com/apis/credentials
+GOOGLE_MAPS_API_KEY = "AIzaSyDSrJIn4ckG430oRbwjQg6TAgg46DhEi1Y"
 
 
 @dataclass
@@ -78,9 +82,33 @@ class CommuteSearch:
     WIFE_WORKPLACE = "E8 1EA"  # Hackney Town Hall
     WIFE_WORKPLACE_NAME = "Hackney Council (Mare Street)"
 
-    def __init__(self, tfl_api_key: Optional[str] = None):
-        """Initialize the search engine"""
+    def __init__(
+        self,
+        google_api_key: Optional[str] = None,
+        tfl_api_key: Optional[str] = None,
+        use_google: bool = True
+    ):
+        """
+        Initialize the search engine.
+
+        Args:
+            google_api_key: Google Maps API key (recommended, more accurate)
+            tfl_api_key: TfL API key (optional, for higher rate limits)
+            use_google: Use Google Maps API if key available (default True)
+        """
+        # Use provided key or fall back to default
+        self.google_api_key = google_api_key or GOOGLE_MAPS_API_KEY
+        self.use_google = use_google and bool(self.google_api_key)
+
+        if self.use_google:
+            self.google = GoogleMapsClient(self.google_api_key)
+            print("Using Google Maps Directions API (more accurate)")
+        else:
+            self.google = None
+
+        # TfL as fallback
         self.tfl = TfLJourneyPlanner(app_key=tfl_api_key)
+
         self.results: List[CommuteResult] = []
         self.cache_file = Path(__file__).parent / "commute_cache.json"
         self._load_cache()
@@ -110,27 +138,52 @@ class CommuteSearch:
 
     def _get_journey_time(
         self,
-        from_station: str,
+        from_location: str,
         to_location: str,
-        arrival_hour: int = 9
+        arrival_hour: int = 9,
+        location_name: str = None
     ) -> Tuple[Optional[int], Optional[JourneyOption]]:
         """
-        Get journey time from a station to a destination.
-        Uses cache if available.
+        Get journey time from a location to a destination.
+        Uses cache if available, then Google Maps, then TfL as fallback.
+
+        Args:
+            from_location: Starting location (station name or area)
+            to_location: Destination postcode
+            arrival_hour: Hour to arrive by (24h format)
+            location_name: Full location name for Google (e.g., "Gravesend, UK")
         """
-        cache_key = self._get_cache_key(from_station, to_location)
+        cache_key = self._get_cache_key(from_location, to_location)
 
         # Check cache first
         if cache_key in self.cache:
             cached = self.cache[cache_key]
             return cached.get('mins'), None  # Don't cache full journey object
 
-        # Query TfL API
-        result = self.tfl.get_typical_commute_time(
-            from_station,
-            to_location,
-            arrival_hour=arrival_hour
-        )
+        result = None
+
+        # Try Google Maps first (more accurate)
+        if self.use_google and self.google:
+            # Format location for Google - add UK suffix for better results
+            google_from = location_name or f"{from_location}, UK"
+            google_to = f"{to_location}, London, UK"
+
+            try:
+                result = self.google.get_commute_time(
+                    google_from,
+                    google_to,
+                    arrival_hour=arrival_hour
+                )
+            except Exception as e:
+                print(f"Google Maps error for {from_location}: {e}")
+
+        # Fall back to TfL if Google didn't work
+        if not result:
+            result = self.tfl.get_typical_commute_time(
+                from_location,
+                to_location,
+                arrival_hour=arrival_hour
+            )
 
         if result:
             mins = result['fastest_mins']
@@ -138,6 +191,7 @@ class CommuteSearch:
             self.cache[cache_key] = {
                 'mins': mins,
                 'changes': result['num_changes'],
+                'source': 'google' if self.use_google else 'tfl',
                 'queried': datetime.now().isoformat()
             }
             self._save_cache()
@@ -176,18 +230,23 @@ class CommuteSearch:
             # Calculate distance from London
             dist_km = distance_from_london(loc.lat, loc.lon)
 
+            # Format location name for Google Maps (more accurate than just station)
+            google_location = f"{loc.name}, UK"
+
             # Get your commute time
             your_mins, your_journey = self._get_journey_time(
                 loc.station,
                 self.YOUR_WORKPLACE,
-                arrival_hour=your_arrival_hour
+                arrival_hour=your_arrival_hour,
+                location_name=google_location
             )
 
             # Get wife's commute time
             wife_mins, wife_journey = self._get_journey_time(
                 loc.station,
                 self.WIFE_WORKPLACE,
-                arrival_hour=wife_arrival_hour
+                arrival_hour=wife_arrival_hour,
+                location_name=google_location
             )
 
             # Calculate combined metrics
