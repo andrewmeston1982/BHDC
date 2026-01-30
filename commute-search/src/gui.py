@@ -4,13 +4,17 @@ Commute Time Property Search - AUTOMATIC SCANNER
 
 Scans ALL 500+ railway stations and finds the ones within your commute time.
 No more guessing - it finds the hidden gems FOR YOU.
+
+Now with TravelTime API support for MUCH faster scanning!
+- TravelTime can check 2000 locations in ONE request
+- Google Maps as fallback (slower, one at a time)
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 import webbrowser
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -20,8 +24,20 @@ from google_maps_client import GoogleMapsClient
 from tfl_client import TfLJourneyPlanner
 from uk_stations import UK_STATIONS, get_stations_within_distance
 
-# Your Google Maps API key
+# Try to import TravelTime client
+try:
+    from traveltime_client import TravelTimeClient, geocode_postcode
+    TRAVELTIME_AVAILABLE = True
+except ImportError:
+    TRAVELTIME_AVAILABLE = False
+
+# Your API keys (update these)
 GOOGLE_MAPS_API_KEY = "AIzaSyDSrJIn4ckG430oRbwjQg6TAgg46DhEi1Y"
+
+# TravelTime credentials - set these if you have them
+# Get yours at: https://traveltime.com/
+TRAVELTIME_APP_ID = ""
+TRAVELTIME_API_KEY = ""
 
 
 @dataclass
@@ -45,19 +61,25 @@ class AutoScannerGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Commute Property Search - Auto Scanner")
-        self.root.geometry("1400x900")
-        self.root.minsize(1200, 800)
+        self.root.geometry("1400x950")
+        self.root.minsize(1200, 850)
 
         # API clients
         self.google = GoogleMapsClient(GOOGLE_MAPS_API_KEY)
         self.tfl = TfLJourneyPlanner()
+        self.traveltime = None  # Will be initialized if credentials provided
 
         # Results & cache
         self.results: List[StationResult] = []
         self.cache = self._load_cache()
         self.scanning = False
 
+        # Geocoded work coordinates (for TravelTime)
+        self.your_work_coords: Optional[Tuple[float, float]] = None
+        self.partner_work_coords: Optional[Tuple[float, float]] = None
+
         self._create_widgets()
+        self._load_api_settings()
 
     def _load_cache(self) -> dict:
         """Load cached journey times"""
@@ -79,12 +101,74 @@ class AutoScannerGUI:
         except:
             pass
 
+    def _load_api_settings(self):
+        """Load saved API settings"""
+        settings_file = Path(__file__).parent / "api_settings.json"
+        if settings_file.exists():
+            try:
+                with open(settings_file, 'r') as f:
+                    settings = json.load(f)
+                    if settings.get('traveltime_app_id'):
+                        self.tt_app_id_var.set(settings['traveltime_app_id'])
+                    if settings.get('traveltime_api_key'):
+                        self.tt_api_key_var.set(settings['traveltime_api_key'])
+                    self._init_traveltime()
+            except:
+                pass
+
+    def _save_api_settings(self):
+        """Save API settings"""
+        settings_file = Path(__file__).parent / "api_settings.json"
+        try:
+            with open(settings_file, 'w') as f:
+                json.dump({
+                    'traveltime_app_id': self.tt_app_id_var.get(),
+                    'traveltime_api_key': self.tt_api_key_var.get()
+                }, f)
+        except:
+            pass
+
+    def _init_traveltime(self):
+        """Initialize TravelTime client if credentials provided"""
+        if not TRAVELTIME_AVAILABLE:
+            return False
+
+        app_id = self.tt_app_id_var.get().strip()
+        api_key = self.tt_api_key_var.get().strip()
+
+        if app_id and api_key:
+            self.traveltime = TravelTimeClient(app_id, api_key)
+            self._save_api_settings()
+            return True
+        return False
+
     def _create_widgets(self):
         """Create the UI"""
 
         # Main container
         main = ttk.Frame(self.root, padding="10")
         main.pack(fill="both", expand=True)
+
+        # === API Settings ===
+        api_frame = ttk.LabelFrame(main, text="TravelTime API (FAST - checks 2000 locations at once!) - Get free key at traveltime.com", padding="5")
+        api_frame.pack(fill="x", pady=(0, 5))
+
+        api_row = ttk.Frame(api_frame)
+        api_row.pack(fill="x")
+
+        ttk.Label(api_row, text="App ID:").pack(side="left")
+        self.tt_app_id_var = tk.StringVar(value=TRAVELTIME_APP_ID)
+        ttk.Entry(api_row, textvariable=self.tt_app_id_var, width=35, show="*").pack(side="left", padx=(5, 15))
+
+        ttk.Label(api_row, text="API Key:").pack(side="left")
+        self.tt_api_key_var = tk.StringVar(value=TRAVELTIME_API_KEY)
+        ttk.Entry(api_row, textvariable=self.tt_api_key_var, width=50, show="*").pack(side="left", padx=(5, 15))
+
+        self.api_status_var = tk.StringVar(value="TravelTime: Not configured (using slower Google Maps)")
+        self.api_status_label = ttk.Label(api_row, textvariable=self.api_status_var, foreground="gray")
+        self.api_status_label.pack(side="left", padx=10)
+
+        ttk.Button(api_row, text="Test & Save", command=self._test_traveltime).pack(side="left")
 
         # === TOP: Settings ===
         settings_frame = ttk.LabelFrame(main, text="Settings - Set your workplaces and max commute times", padding="10")
@@ -255,8 +339,75 @@ class AutoScannerGUI:
 
         ttk.Button(btn_frame, text="📊 Export CSV", command=self._export, width=15).pack(pady=2)
 
+    def _test_traveltime(self):
+        """Test TravelTime API connection"""
+        if not TRAVELTIME_AVAILABLE:
+            messagebox.showerror("Not Available", "TravelTime client module not found")
+            return
+
+        app_id = self.tt_app_id_var.get().strip()
+        api_key = self.tt_api_key_var.get().strip()
+
+        if not app_id or not api_key:
+            messagebox.showwarning("Missing Credentials", "Please enter both App ID and API Key")
+            return
+
+        self.api_status_var.set("Testing connection...")
+        self.root.update()
+
+        try:
+            self.traveltime = TravelTimeClient(app_id, api_key)
+
+            # Test with a simple geocode + time filter
+            test_coords = geocode_postcode("W1T3JF")
+            if not test_coords:
+                raise Exception("Could not geocode test postcode")
+
+            # Test a quick time filter
+            result = self.traveltime.time_filter_many(
+                test_coords,
+                [("test", 51.5, -0.1)],  # Central London
+                max_travel_time_mins=60
+            )
+
+            if result is not None:
+                self._save_api_settings()
+                self.api_status_var.set("TravelTime: Connected (FAST mode enabled)")
+                self.api_status_label.config(foreground="green")
+                messagebox.showinfo("Success", "TravelTime API connected!\n\nYou can now scan ALL stations very quickly.")
+            else:
+                raise Exception("API returned no results")
+
+        except Exception as e:
+            self.traveltime = None
+            self.api_status_var.set(f"TravelTime: Error - {str(e)[:30]}")
+            self.api_status_label.config(foreground="red")
+            messagebox.showerror("Connection Failed", f"Could not connect to TravelTime API:\n{e}")
+
+    def _geocode_workplaces(self) -> bool:
+        """Geocode workplaces for TravelTime API"""
+        your_work = self.your_work_var.get().strip()
+        partner_work = self.partner_work_var.get().strip()
+
+        if TRAVELTIME_AVAILABLE:
+            self.your_work_coords = geocode_postcode(your_work.replace(" ", ""))
+            self.partner_work_coords = geocode_postcode(partner_work.replace(" ", ""))
+
+            if not self.your_work_coords:
+                messagebox.showerror("Error", f"Could not geocode your workplace: {your_work}")
+                return False
+            if not self.partner_work_coords:
+                messagebox.showerror("Error", f"Could not geocode partner workplace: {partner_work}")
+                return False
+
+        return True
+
     def _start_scan(self):
         """Start scanning all stations"""
+        # Geocode workplaces first if using TravelTime
+        if self.traveltime and not self._geocode_workplaces():
+            return
+
         self.scanning = True
         self.scan_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
@@ -267,13 +418,109 @@ class AutoScannerGUI:
             self.tree.delete(item)
 
         # Start background thread
-        thread = threading.Thread(target=self._do_scan)
+        if self.traveltime and self.your_work_coords and self.partner_work_coords:
+            thread = threading.Thread(target=self._do_scan_traveltime)
+        else:
+            thread = threading.Thread(target=self._do_scan)
         thread.daemon = True
         thread.start()
 
     def _stop_scan(self):
         """Stop scanning"""
         self.scanning = False
+
+    def _do_scan_traveltime(self):
+        """Perform scan using TravelTime API (FAST - bulk queries)"""
+        your_max = self.your_max_var.get()
+        partner_max = self.partner_max_var.get()
+        arrival = self.arrival_var.get()
+        radius = self.radius_var.get()
+
+        # Get stations within radius
+        stations = get_stations_within_distance(radius)
+        total = len(stations)
+
+        self.root.after(0, lambda: self.progress_var.set(f"TravelTime: Checking {total} stations in bulk (this is FAST!)..."))
+        self.root.after(0, lambda: self.progress_bar.configure(mode="indeterminate"))
+        self.root.after(0, lambda: self.progress_bar.start(10))
+
+        # Prepare stations for TravelTime
+        station_list = [(f"{name}|{postcode}", lat, lon) for name, postcode, lat, lon in stations]
+
+        # Step 1: Get times to YOUR workplace (bulk)
+        self.root.after(0, lambda: self.progress_var.set(f"Step 1/2: Checking {total} stations → your workplace..."))
+
+        your_times = self.traveltime.time_filter_batch(
+            self.your_work_coords,
+            station_list,
+            max_travel_time_mins=your_max,
+            arrival_hour=arrival
+        )
+
+        if not self.scanning:
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        # Filter to only those within your limit
+        reachable_your = {k: v for k, v in your_times.items() if v is not None and v <= your_max}
+
+        self.root.after(0, lambda: self.progress_var.set(f"Found {len(reachable_your)} within your limit. Step 2/2: Checking partner's workplace..."))
+
+        # Step 2: Get times to PARTNER's workplace (only for stations that passed step 1)
+        filtered_stations = [(sid, lat, lon) for sid, lat, lon in station_list if sid in reachable_your]
+
+        partner_times = self.traveltime.time_filter_batch(
+            self.partner_work_coords,
+            filtered_stations,
+            max_travel_time_mins=partner_max,
+            arrival_hour=arrival
+        )
+
+        if not self.scanning:
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        # Build results for stations that meet BOTH criteria
+        matches = []
+        station_dict = {f"{name}|{postcode}": (name, postcode, lat, lon) for name, postcode, lat, lon in stations}
+
+        import math
+        def haversine(lat1, lon1, lat2, lon2):
+            R = 6371
+            dlat = math.radians(lat2 - lat1)
+            dlon = math.radians(lon2 - lon1)
+            a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+            return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+        for station_id, your_mins in reachable_your.items():
+            partner_mins = partner_times.get(station_id)
+            if partner_mins is not None and partner_mins <= partner_max:
+                name, postcode, lat, lon = station_dict[station_id]
+                dist = haversine(51.5, -0.1, lat, lon)
+
+                result = StationResult(
+                    name=name,
+                    postcode=postcode,
+                    lat=lat,
+                    lon=lon,
+                    distance_km=dist,
+                    your_commute_mins=your_mins,
+                    partner_commute_mins=partner_mins,
+                    combined_mins=your_mins + partner_mins,
+                    your_changes=0,  # TravelTime doesn't give change count
+                    partner_changes=0
+                )
+                matches.append(result)
+
+                # Add to tree immediately
+                self.root.after(0, lambda r=result: self._add_result(r))
+
+        # Stop progress bar
+        self.root.after(0, lambda: self.progress_bar.stop())
+        self.root.after(0, lambda: self.progress_bar.configure(mode="determinate"))
+
+        # Done
+        self.root.after(0, lambda: self._finish_scan(matches))
 
     def _do_scan(self):
         """Perform the scan"""
