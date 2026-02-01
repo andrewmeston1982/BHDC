@@ -23,6 +23,7 @@ import time
 from google_maps_client import GoogleMapsClient
 from tfl_client import TfLJourneyPlanner
 from uk_stations import UK_STATIONS, get_stations_within_distance
+from kent_villages import KENT_VILLAGES, HUB_STATIONS, get_villages_near_hub
 
 # Try to import TravelTime client
 try:
@@ -200,7 +201,19 @@ class AutoScannerGUI:
         ttk.Label(row2, text="Scan radius from London:").pack(side="left")
         self.radius_var = tk.IntVar(value=80)
         ttk.Spinbox(row2, from_=30, to=150, textvariable=self.radius_var, width=6).pack(side="left", padx=5)
-        ttk.Label(row2, text="km").pack(side="left", padx=(0, 30))
+        ttk.Label(row2, text="km").pack(side="left", padx=(0, 15))
+
+        # Hub station mode
+        self.hub_mode_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row2, text="🚗 Drive-to-hub mode", variable=self.hub_mode_var, command=self._toggle_hub_mode).pack(side="left", padx=(0, 5))
+        self.hub_station_var = tk.StringVar(value="Ebbsfleet International")
+        self.hub_combo = ttk.Combobox(row2, textvariable=self.hub_station_var, width=20, state="disabled",
+            values=["Ebbsfleet International", "Stratford International", "Ashford International", "Dartford", "Gravesend"])
+        self.hub_combo.pack(side="left", padx=(0, 5))
+        self.hub_drive_var = tk.IntVar(value=25)
+        self.hub_drive_spin = ttk.Spinbox(row2, from_=10, to=45, textvariable=self.hub_drive_var, width=3, state="disabled")
+        self.hub_drive_spin.pack(side="left", padx=2)
+        ttk.Label(row2, text="min drive").pack(side="left", padx=(0, 15))
 
         ttk.Label(row2, text="Arrive by:").pack(side="left")
         self.arrival_hour_var = tk.IntVar(value=9)
@@ -342,6 +355,15 @@ class AutoScannerGUI:
 
         ttk.Button(btn_frame, text="🗺️ View Map", command=self._show_map, width=15).pack(pady=2)
 
+    def _toggle_hub_mode(self):
+        """Toggle hub station driving mode"""
+        if self.hub_mode_var.get():
+            self.hub_combo.config(state="readonly")
+            self.hub_drive_spin.config(state="normal")
+        else:
+            self.hub_combo.config(state="disabled")
+            self.hub_drive_spin.config(state="disabled")
+
     def _test_traveltime(self):
         """Test TravelTime API connection"""
         if not TRAVELTIME_AVAILABLE:
@@ -420,8 +442,11 @@ class AutoScannerGUI:
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        # Start background thread
-        if self.traveltime and self.your_work_coords and self.partner_work_coords:
+        # Start background thread - choose mode
+        if self.hub_mode_var.get() and self.traveltime:
+            # Hub mode: find places within driving distance of hub station
+            thread = threading.Thread(target=self._do_scan_hub_mode)
+        elif self.traveltime and self.your_work_coords and self.partner_work_coords:
             thread = threading.Thread(target=self._do_scan_traveltime)
         else:
             thread = threading.Thread(target=self._do_scan)
@@ -431,6 +456,152 @@ class AutoScannerGUI:
     def _stop_scan(self):
         """Stop scanning"""
         self.scanning = False
+
+    def _do_scan_hub_mode(self):
+        """Scan for places within driving distance of a hub station (e.g., Ebbsfleet)"""
+        hub_name = self.hub_station_var.get()
+        max_drive_mins = self.hub_drive_var.get()
+        your_max = self.your_max_var.get()
+        partner_max = self.partner_max_var.get()
+        arrival_hour = self.arrival_hour_var.get()
+
+        if hub_name not in HUB_STATIONS:
+            self.root.after(0, lambda: messagebox.showerror("Error", f"Unknown hub station: {hub_name}"))
+            return
+
+        hub_coords = HUB_STATIONS[hub_name]
+
+        self.root.after(0, lambda: self.progress_var.set(f"Hub mode: Finding places within {max_drive_mins} min drive of {hub_name}..."))
+        self.root.after(0, lambda: self.progress_bar.configure(mode="indeterminate"))
+        self.root.after(0, lambda: self.progress_bar.start(10))
+
+        # Step 1: Get train time from hub to YOUR workplace
+        self.root.after(0, lambda: self.progress_var.set(f"Step 1/3: Checking train time from {hub_name} to your workplace..."))
+        hub_to_your_work = self.traveltime.time_filter_many(
+            self.your_work_coords,
+            [("hub", hub_coords[0], hub_coords[1])],
+            max_travel_time_mins=120,
+            arrival_hour=arrival_hour
+        )
+        train_to_you = hub_to_your_work.get("hub")
+        if train_to_you is None:
+            self.root.after(0, lambda: messagebox.showerror("Error", f"Could not calculate train time from {hub_name} to your workplace"))
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        # Step 2: Get train time from hub to PARTNER's workplace
+        self.root.after(0, lambda: self.progress_var.set(f"Step 2/3: Checking train time from {hub_name} to partner's workplace..."))
+        hub_to_partner_work = self.traveltime.time_filter_many(
+            self.partner_work_coords,
+            [("hub", hub_coords[0], hub_coords[1])],
+            max_travel_time_mins=120,
+            arrival_hour=arrival_hour
+        )
+        train_to_partner = hub_to_partner_work.get("hub")
+        if train_to_partner is None:
+            self.root.after(0, lambda: messagebox.showerror("Error", f"Could not calculate train time from {hub_name} to partner's workplace"))
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        self.root.after(0, lambda: self.progress_var.set(
+            f"Train times: {hub_name} → You: {train_to_you}min, Partner: {train_to_partner}min. Now checking driving times..."
+        ))
+
+        # Calculate max driving time allowed for each person
+        max_drive_for_you = your_max - train_to_you
+        max_drive_for_partner = partner_max - train_to_partner
+        effective_max_drive = min(max_drive_mins, max_drive_for_you, max_drive_for_partner)
+
+        if effective_max_drive <= 0:
+            self.root.after(0, lambda: messagebox.showwarning("No Results",
+                f"Train journey alone exceeds limits!\n\n"
+                f"{hub_name} to you: {train_to_you} mins (your max: {your_max})\n"
+                f"{hub_name} to partner: {train_to_partner} mins (partner max: {partner_max})\n\n"
+                f"Try a different hub station or increase your max commute times."
+            ))
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        # Step 3: Get all Kent villages and check driving times to hub
+        villages = get_villages_near_hub(hub_name, max_distance_km=60)
+        total = len(villages)
+
+        self.root.after(0, lambda: self.progress_var.set(f"Step 3/3: Checking driving time from {total} places to {hub_name}..."))
+
+        # Prepare villages for TravelTime driving check
+        village_list = [(f"{name}|{postcode}", lat, lon) for name, postcode, lat, lon, _ in villages]
+
+        # Use DRIVING mode to check times to hub
+        drive_times = self.traveltime.time_filter_batch(
+            hub_coords,  # destination is the hub
+            village_list,
+            max_travel_time_mins=max_drive_mins,
+            arrival_hour=arrival_hour - 1,  # Need to arrive at hub before the train
+            transport_type="driving"  # DRIVING mode!
+        )
+
+        if not self.scanning:
+            self.root.after(0, lambda: self._finish_scan([]))
+            return
+
+        # Build results
+        matches = []
+        import math
+        def haversine(lat1, lon1, lat2, lon2):
+            R = 6371
+            dlat = math.radians(lat2 - lat1)
+            dlon = math.radians(lon2 - lon1)
+            a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+            return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+        for name, postcode, lat, lon, dist_to_hub in villages:
+            village_id = f"{name}|{postcode}"
+            drive_time = drive_times.get(village_id)
+
+            if drive_time is None:
+                continue
+
+            # Total commute = drive to hub + train to work
+            your_total = drive_time + train_to_you
+            partner_total = drive_time + train_to_partner
+
+            # Check if both within limits
+            if your_total > your_max or partner_total > partner_max:
+                continue
+
+            dist = haversine(51.5, -0.1, lat, lon)
+
+            result = StationResult(
+                name=f"{name} (🚗→{hub_name})",
+                postcode=postcode,
+                lat=lat,
+                lon=lon,
+                distance_km=dist,
+                your_commute_mins=your_total,
+                partner_commute_mins=partner_total,
+                combined_mins=your_total + partner_total,
+                your_changes=0,
+                partner_changes=0
+            )
+            matches.append(result)
+            self.root.after(0, lambda r=result: self._add_result(r))
+
+        # Stop progress bar
+        self.root.after(0, lambda: self.progress_bar.stop())
+        self.root.after(0, lambda: self.progress_bar.configure(mode="determinate"))
+
+        # Show summary
+        if matches:
+            self.root.after(0, lambda: self.progress_var.set(
+                f"Found {len(matches)} places! Drive to {hub_name} + train. "
+                f"Train times: You {train_to_you}min, Partner {train_to_partner}min"
+            ))
+        else:
+            self.root.after(0, lambda: self.progress_var.set(
+                f"No places found within driving distance that meet both commute limits."
+            ))
+
+        self.root.after(0, lambda: self._finish_scan(matches))
 
     def _do_scan_traveltime(self):
         """Perform scan using TravelTime API (FAST - bulk queries)"""
