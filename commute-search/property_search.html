@@ -229,12 +229,16 @@
             if (!encodedPolyline || !areaBounds) return null;
             const chainFree = document.getElementById('chainFree').checked;
 
-            // Zoopla format from user - polyenc is double-encoded
-            // Their URL had: polyenc=cvlxHkj%257C%2540cnK... which decodes to cvlxHkj%7C%40cnK...
+            // Zoopla format from working URL: /for-sale/map/property/uk with q= parameter
+            // polyenc is double-encoded, bounds use encoded commas (%2C)
             const polyenc = encodeURIComponent(encodeURIComponent(encodedPolyline));
 
-            let url = 'https://www.zoopla.co.uk/for-sale/houses/map/';
-            url += '?beds_min=3';
+            // Use the working URL structure: /for-sale/map/property/uk
+            let url = 'https://www.zoopla.co.uk/for-sale/map/property/uk';
+            url += '?q=Kent';  // Generic location
+            url += '&search_source=home';
+            url += '&map_app=true';
+            url += '&beds_min=3';
             url += '&price_max=550000';
             url += '&feature=has_garden';
             url += '&feature=has_parking_garage';
@@ -251,9 +255,9 @@
             url += '&polyenc=' + polyenc;
             url += '&radius=0';
             url += '&draw=true';
-            url += '&map_app=true';
-            url += '&search_source=for-sale';
-            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + ',' + areaBounds.getSouth().toFixed(6) + ',' + areaBounds.getEast().toFixed(6) + ',' + areaBounds.getWest().toFixed(6);
+            // Bounds with encoded commas like the working URL
+            const bounds = areaBounds.getNorth().toFixed(6) + '%2C' + areaBounds.getSouth().toFixed(6) + '%2C' + areaBounds.getEast().toFixed(6) + '%2C' + areaBounds.getWest().toFixed(6);
+            url += '&bounds=' + bounds;
             return url;
         }
 
