@@ -252,7 +252,7 @@
             url += '&radius=0';
             url += '&draw=true';
             url += '&search_source=for-sale';
-            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + '%2C' + areaBounds.getSouth().toFixed(6) + '%2C' + areaBounds.getEast().toFixed(6) + '%2C' + areaBounds.getWest().toFixed(6);
+            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + ',' + areaBounds.getSouth().toFixed(6) + ',' + areaBounds.getEast().toFixed(6) + ',' + areaBounds.getWest().toFixed(6);
             return url;
         }
 
