@@ -82,21 +82,39 @@
             width: 100%;
             margin-top: 10px;
         }
+
+        .chain-free-toggle {
+            margin: 10px 0;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .chain-free-toggle label {
+            cursor: pointer;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
 
     <div class="controls">
-        <h2>Property Search</h2>
+        <h2>🏠 Property Search</h2>
 
         <div class="filters">
             <div><strong>Your filters:</strong></div>
-            <div>3+ bedrooms, 2+ bathrooms</div>
-            <div>Max price: £550,000</div>
-            <div>Must have: Garage/parking, Garden</div>
-            <div>Freehold only</div>
-            <div>Excludes: Auction, Retirement, Schemes, New builds</div>
+            <div>✓ 3+ bedrooms</div>
+            <div>✓ Max £550,000</div>
+            <div>✓ Garden + Parking/Garage</div>
+            <div>✓ Freehold only</div>
+            <div>✗ No auction/retirement/schemes/new builds</div>
+        </div>
+
+        <div class="chain-free-toggle">
+            <label>
+                <input type="checkbox" id="chainFree"> Chain-free only (Zoopla)
+            </label>
         </div>
 
         <div class="search-buttons">
@@ -115,7 +133,7 @@
         </div>
 
         <div class="area-info" id="areaInfo">
-            Draw a shape on the map to define your search area
+            👆 Draw a shape on the map to define your search area
         </div>
 
         <button class="search-btn clear-btn" id="clearBtn">
@@ -124,12 +142,50 @@
     </div>
 
     <div class="instructions" id="instructions">
-        👆 Click the polygon tool on the left, then click points on the map to draw your search area
+        👆 Click the polygon tool (left side), then click points on the map to draw your area. Double-click to finish.
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script>
+        // Google Polyline Encoder
+        function encodePolyline(coordinates) {
+            let encoded = '';
+            let prevLat = 0;
+            let prevLng = 0;
+
+            for (const coord of coordinates) {
+                const lat = Math.round(coord.lat * 1e5);
+                const lng = Math.round(coord.lng * 1e5);
+
+                encoded += encodeSignedNumber(lat - prevLat);
+                encoded += encodeSignedNumber(lng - prevLng);
+
+                prevLat = lat;
+                prevLng = lng;
+            }
+
+            return encoded;
+        }
+
+        function encodeSignedNumber(num) {
+            let sgn_num = num << 1;
+            if (num < 0) {
+                sgn_num = ~sgn_num;
+            }
+            return encodeNumber(sgn_num);
+        }
+
+        function encodeNumber(num) {
+            let encoded = '';
+            while (num >= 0x20) {
+                encoded += String.fromCharCode((0x20 | (num & 0x1f)) + 63);
+                num >>= 5;
+            }
+            encoded += String.fromCharCode(num + 63);
+            return encoded;
+        }
+
         // Initialize map centered on Kent/Essex area
         const map = L.map('map').setView([51.4, 0.4], 10);
 
@@ -146,10 +202,10 @@
             draw: {
                 polygon: {
                     allowIntersection: false,
-                    shapeOptions: { color: '#E74C3C', weight: 3 }
+                    shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 }
                 },
                 rectangle: {
-                    shapeOptions: { color: '#E74C3C', weight: 3 }
+                    shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 }
                 },
                 circle: false,
                 circlemarker: false,
@@ -163,36 +219,44 @@
         map.addControl(drawControl);
 
         // Current drawn area
-        let currentArea = null;
-        let areaCenter = null;
-        let areaName = '';
+        let drawnPolygon = null;
+        let encodedPolyline = '';
+        let areaBounds = null;
 
-        // Handle drawing
+        // Handle drawing created
         map.on('draw:created', function(e) {
             drawnItems.clearLayers();
             drawnItems.addLayer(e.layer);
-            currentArea = e.layer;
+            drawnPolygon = e.layer;
 
-            // Get center of drawn area
-            const bounds = e.layer.getBounds();
-            areaCenter = bounds.getCenter();
+            // Get coordinates
+            let coords;
+            if (e.layerType === 'rectangle') {
+                const bounds = e.layer.getBounds();
+                coords = [
+                    bounds.getNorthWest(),
+                    bounds.getNorthEast(),
+                    bounds.getSouthEast(),
+                    bounds.getSouthWest(),
+                    bounds.getNorthWest() // Close the polygon
+                ];
+            } else {
+                coords = e.layer.getLatLngs()[0];
+                // Close polygon if not already closed
+                if (coords[0].lat !== coords[coords.length-1].lat ||
+                    coords[0].lng !== coords[coords.length-1].lng) {
+                    coords.push(coords[0]);
+                }
+            }
 
-            // Reverse geocode to get area name
-            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${areaCenter.lat}&lon=${areaCenter.lng}&format=json`)
-                .then(r => r.json())
-                .then(data => {
-                    const addr = data.address;
-                    areaName = addr.village || addr.town || addr.city || addr.hamlet || addr.suburb || '';
-                    const county = addr.county || '';
-                    document.getElementById('areaInfo').innerHTML =
-                        `<strong>Search area:</strong> ${areaName}${county ? ', ' + county : ''}<br>` +
-                        `<small>Center: ${areaCenter.lat.toFixed(4)}, ${areaCenter.lng.toFixed(4)}</small>`;
-                })
-                .catch(() => {
-                    document.getElementById('areaInfo').innerHTML =
-                        `<strong>Area selected</strong><br>` +
-                        `<small>Center: ${areaCenter.lat.toFixed(4)}, ${areaCenter.lng.toFixed(4)}</small>`;
-                });
+            // Encode polyline
+            encodedPolyline = encodePolyline(coords);
+            areaBounds = e.layer.getBounds();
+
+            // Update UI
+            document.getElementById('areaInfo').innerHTML =
+                `<strong>✓ Area selected!</strong><br>` +
+                `<small>${coords.length - 1} points defined</small>`;
 
             // Enable buttons
             document.querySelectorAll('.search-btn').forEach(btn => {
@@ -204,77 +268,109 @@
             document.getElementById('instructions').style.display = 'none';
         });
 
+        // Handle drawing edited
+        map.on('draw:edited', function(e) {
+            e.layers.eachLayer(function(layer) {
+                drawnPolygon = layer;
+                let coords = layer.getLatLngs()[0];
+                if (coords[0].lat !== coords[coords.length-1].lat ||
+                    coords[0].lng !== coords[coords.length-1].lng) {
+                    coords.push(coords[0]);
+                }
+                encodedPolyline = encodePolyline(coords);
+                areaBounds = layer.getBounds();
+            });
+        });
+
         // Clear button
         document.getElementById('clearBtn').addEventListener('click', function() {
             drawnItems.clearLayers();
-            currentArea = null;
-            areaCenter = null;
+            drawnPolygon = null;
+            encodedPolyline = '';
+            areaBounds = null;
+
             document.querySelectorAll('.search-btn').forEach(btn => {
                 if (!btn.classList.contains('clear-btn')) {
                     btn.disabled = true;
                 }
             });
-            document.getElementById('areaInfo').innerHTML = 'Draw a shape on the map to define your search area';
+            document.getElementById('areaInfo').innerHTML = '👆 Draw a shape on the map to define your search area';
             document.getElementById('instructions').style.display = 'block';
         });
 
-        // Search filters (your requirements)
-        const filters = {
-            minBeds: 3,
-            maxPrice: 550000,
-            mustHave: ['garden', 'parking'],
-            exclude: ['newHome', 'retirement', 'sharedOwnership', 'auction'],
-            tenure: 'freehold',
-            propertyTypes: ['detached', 'semi-detached', 'terraced', 'bungalow']
-        };
-
         // Generate Rightmove URL
         function getRightmoveUrl() {
-            if (!areaCenter) return null;
+            if (!encodedPolyline) return null;
 
-            // Rightmove uses location search
-            const searchTerm = areaName || `${areaCenter.lat},${areaCenter.lng}`;
-            let url = `https://www.rightmove.co.uk/property-for-sale/find.html`;
-            url += `?searchLocation=${encodeURIComponent(searchTerm)}`;
-            url += `&useLocationIdentifier=false`;
-            url += `&radius=3.0`; // 3 mile radius from center
-            url += `&minBedrooms=${filters.minBeds}`;
-            url += `&maxPrice=${filters.maxPrice}`;
-            url += `&propertyTypes=${filters.propertyTypes.join(',')}`;
-            url += `&mustHave=${filters.mustHave.join(',')}`;
-            url += `&dontShow=${filters.exclude.join(',')}`;
-            url += `&tenure=${filters.tenure}`;
+            // Rightmove format: USERDEFINEDAREA^{"polylines":"<encoded>"}
+            const polylineData = JSON.stringify({ polylines: encodedPolyline });
+            const locationId = 'USERDEFINEDAREA^' + polylineData;
+
+            let url = 'https://www.rightmove.co.uk/property-for-sale/find.html';
+            url += '?locationIdentifier=' + encodeURIComponent(locationId);
+            url += '&maxPrice=550000';
+            url += '&minBedrooms=3';
+            url += '&propertyTypes=detached,semi-detached,terraced,bungalow';
+            url += '&mustHave=garden,parking';
+            url += '&dontShow=newHome,sharedOwnership,retirement,auction';
+            url += '&tenure=freehold';
+            url += '&sortType=6'; // Most recent
+            url += '&channel=BUY';
 
             return url;
         }
 
         // Generate Zoopla URL
         function getZooplaUrl() {
-            if (!areaCenter) return null;
+            if (!encodedPolyline || !areaBounds) return null;
 
-            const searchTerm = areaName || 'area';
-            let url = `https://www.zoopla.co.uk/for-sale/property/${searchTerm.toLowerCase().replace(/\s+/g, '-')}/`;
-            url += `?beds_min=${filters.minBeds}`;
-            url += `&price_max=${filters.maxPrice}`;
-            url += `&property_sub_type=detached,semi_detached,terraced,bungalow`;
-            url += `&feature=has_garden,has_parking`;
-            url += `&tenure=freehold`;
-            url += `&new_homes=exclude`;
-            url += `&is_retirement_home=false`;
-            url += `&is_shared_ownership=false`;
-            url += `&is_auction=false`;
+            const chainFree = document.getElementById('chainFree').checked;
+
+            // Zoopla needs the polyenc double-encoded and bounds
+            const polyenc = encodeURIComponent(encodedPolyline);
+
+            let url = 'https://www.zoopla.co.uk/for-sale/houses/map/';
+            url += '?beds_min=3';
+            url += '&price_max=550000';
+            url += '&feature=has_garden';
+            url += '&feature=has_parking_garage';
+            url += '&property_sub_type=detached';
+            url += '&property_sub_type=semi_detached';
+            url += '&property_sub_type=terraced';
+            url += '&property_sub_type=bungalow';
+            url += '&tenure=freehold';
+            url += '&new_homes=exclude';
+            url += '&is_retirement_home=false';
+            url += '&is_shared_ownership=false';
+            url += '&is_auction=false';
+            if (chainFree) {
+                url += '&chain_free=true';
+            }
+            url += '&polyenc=' + polyenc;
+            url += '&radius=0';
+            url += '&draw=true';
+            url += '&bounds=' + areaBounds.getNorth() + ',' + areaBounds.getSouth() + ',' + areaBounds.getEast() + ',' + areaBounds.getWest();
 
             return url;
         }
 
         // Generate OnTheMarket URL
         function getOTMUrl() {
-            if (!areaCenter) return null;
+            if (!encodedPolyline) return null;
 
-            const searchTerm = areaName || 'area';
-            let url = `https://www.onthemarket.com/for-sale/property/${searchTerm.toLowerCase().replace(/\s+/g, '-')}/`;
-            url += `?min-bedrooms=${filters.minBeds}`;
-            url += `&max-price=${filters.maxPrice}`;
+            let url = 'https://www.onthemarket.com/for-sale/property/map/';
+            url += '?min-bedrooms=3';
+            url += '&max-price=550000';
+            url += '&prop-types=detached';
+            url += '&prop-types=semi-detached';
+            url += '&prop-types=terraced';
+            url += '&prop-types=bungalows';
+            url += '&auction=false';
+            url += '&retirement=false';
+            url += '&shared-ownership=false';
+            url += '&new-home-flag=F';
+            url += '&polygons0=' + encodeURIComponent(encodedPolyline);
+            url += '&view=map-list';
 
             return url;
         }
@@ -312,6 +408,8 @@
             { lat: 51.388, lng: 0.367, name: 'Meopham' },
             { lat: 51.395, lng: 0.300, name: 'Longfield' },
             { lat: 51.393, lng: 0.478, name: 'Strood' },
+            { lat: 51.389, lng: 0.506, name: 'Rochester' },
+            { lat: 51.330, lng: 0.450, name: 'Snodland' },
         ];
 
         markers.forEach(m => {
@@ -321,7 +419,7 @@
                 color: '#fff',
                 weight: 2,
                 fillOpacity: 0.8
-            }).addTo(map).bindTooltip(m.name);
+            }).addTo(map).bindTooltip(m.name, { permanent: false });
         });
     </script>
 </body>
