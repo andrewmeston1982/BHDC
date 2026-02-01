@@ -9,9 +9,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-
         #map { height: 100vh; width: 100%; }
-
         .controls {
             position: absolute;
             top: 10px;
@@ -23,14 +21,10 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             max-width: 320px;
         }
-
         h2 { margin-bottom: 10px; font-size: 18px; }
-
         .filters { margin-bottom: 15px; font-size: 13px; color: #666; }
         .filters div { margin: 3px 0; }
-
         .search-buttons { display: flex; flex-direction: column; gap: 8px; }
-
         .search-btn {
             padding: 12px 15px;
             border: none;
@@ -38,24 +32,14 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            text-align: center;
         }
-
-        .search-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
+        .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-rightmove { background: #00DEB6; color: #1a1a1a; }
         .btn-zoopla { background: #8046F1; color: white; }
         .btn-otm { background: #2C3E50; color: white; }
         .btn-all { background: #E74C3C; color: white; font-size: 16px; padding: 15px; }
-
         .search-btn:hover:not(:disabled) { filter: brightness(1.1); }
-
         .instructions {
             position: absolute;
             bottom: 20px;
@@ -68,7 +52,6 @@
             border-radius: 8px;
             font-size: 14px;
         }
-
         .area-info {
             margin-top: 10px;
             padding: 10px;
@@ -76,32 +59,11 @@
             border-radius: 4px;
             font-size: 12px;
         }
-
-        .clear-btn {
-            background: #ccc;
-            color: #333;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .chain-free-toggle {
-            margin: 10px 0;
-            padding: 8px;
-            background: #f0f0f0;
-            border-radius: 4px;
-        }
-
-        .chain-free-toggle label {
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .popup-warning {
-            font-size: 11px;
-            color: #888;
-            text-align: center;
-            margin-top: 5px;
-        }
+        .clear-btn { background: #ccc; color: #333; width: 100%; margin-top: 10px; }
+        .chain-free-toggle { margin: 10px 0; padding: 8px; background: #f0f0f0; border-radius: 4px; }
+        .chain-free-toggle label { cursor: pointer; font-size: 13px; }
+        .url-box { margin-top: 10px; }
+        .url-box a { font-size: 11px; color: #666; word-break: break-all; display: block; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -112,47 +74,35 @@
 
         <div class="filters">
             <div><strong>Your filters:</strong></div>
-            <div>✓ 3+ bedrooms</div>
-            <div>✓ Max £550,000</div>
-            <div>✓ Garden + Parking/Garage</div>
-            <div>✓ Freehold only</div>
-            <div>✗ No auction/retirement/schemes/new builds</div>
+            <div>✓ 3+ bedrooms, Max £550k</div>
+            <div>✓ Garden + Parking, Freehold</div>
+            <div>✗ No auction/retirement/schemes/new</div>
         </div>
 
         <div class="chain-free-toggle">
-            <label>
-                <input type="checkbox" id="chainFree"> Chain-free only (Zoopla)
-            </label>
+            <label><input type="checkbox" id="chainFree"> Chain-free only (Zoopla)</label>
         </div>
 
         <div class="search-buttons">
-            <button class="search-btn btn-all" id="searchAll" disabled>
-                🔍 SEARCH ALL 3 SITES
-            </button>
-            <div class="popup-warning">If only 1 opens, allow popups for this page</div>
-            <button class="search-btn btn-rightmove" id="searchRightmove" disabled>
-                🏠 Rightmove
-            </button>
-            <button class="search-btn btn-zoopla" id="searchZoopla" disabled>
-                🏡 Zoopla
-            </button>
-            <button class="search-btn btn-otm" id="searchOTM" disabled>
-                🏘️ OnTheMarket
-            </button>
+            <button class="search-btn btn-all" id="searchAll" disabled>🔍 SEARCH ALL 3 SITES</button>
+            <button class="search-btn btn-rightmove" id="searchRightmove" disabled>🏠 Rightmove</button>
+            <button class="search-btn btn-zoopla" id="searchZoopla" disabled>🏡 Zoopla</button>
+            <button class="search-btn btn-otm" id="searchOTM" disabled>🏘️ OnTheMarket</button>
         </div>
 
-        <div class="area-info" id="areaInfo">
-            👆 Draw a shape on the map to define your search area
+        <div class="area-info" id="areaInfo">👆 Draw a shape on the map</div>
+
+        <div class="url-box" id="urlBox" style="display:none;">
+            <strong>Direct links (if popups blocked):</strong>
+            <a href="#" id="rmLink" target="_blank">Rightmove</a>
+            <a href="#" id="zpLink" target="_blank">Zoopla</a>
+            <a href="#" id="otmLink" target="_blank">OnTheMarket</a>
         </div>
 
-        <button class="search-btn clear-btn" id="clearBtn">
-            🗑️ Clear & Start Over
-        </button>
+        <button class="search-btn clear-btn" id="clearBtn">🗑️ Clear</button>
     </div>
 
-    <div class="instructions" id="instructions">
-        👆 Click the polygon tool (left side), then click points on the map to draw your area. Double-click to finish.
-    </div>
+    <div class="instructions" id="instructions">👆 Click polygon tool (left), click points to draw, double-click to finish</div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
@@ -160,28 +110,21 @@
         // Google Polyline Encoder
         function encodePolyline(coordinates) {
             let encoded = '';
-            let prevLat = 0;
-            let prevLng = 0;
-
+            let prevLat = 0, prevLng = 0;
             for (const coord of coordinates) {
                 const lat = Math.round(coord.lat * 1e5);
                 const lng = Math.round(coord.lng * 1e5);
-
                 encoded += encodeSignedNumber(lat - prevLat);
                 encoded += encodeSignedNumber(lng - prevLng);
-
                 prevLat = lat;
                 prevLng = lng;
             }
-
             return encoded;
         }
 
         function encodeSignedNumber(num) {
             let sgn_num = num << 1;
-            if (num < 0) {
-                sgn_num = ~sgn_num;
-            }
+            if (num < 0) sgn_num = ~sgn_num;
             return encodeNumber(sgn_num);
         }
 
@@ -195,147 +138,99 @@
             return encoded;
         }
 
-        // Initialize map centered on Kent area (Gravesend/Meopham/Rochester area)
+        // Map setup
         const map = L.map('map').setView([51.38, 0.40], 11);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Drawing layer
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
-        // Drawing controls
         const drawControl = new L.Control.Draw({
             draw: {
-                polygon: {
-                    allowIntersection: false,
-                    shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 }
-                },
-                rectangle: {
-                    shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 }
-                },
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                polyline: false
+                polygon: { allowIntersection: false, shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 } },
+                rectangle: { shapeOptions: { color: '#E74C3C', weight: 3, fillOpacity: 0.2 } },
+                circle: false, circlemarker: false, marker: false, polyline: false
             },
-            edit: {
-                featureGroup: drawnItems
-            }
+            edit: { featureGroup: drawnItems }
         });
         map.addControl(drawControl);
 
-        // Current drawn area
-        let drawnPolygon = null;
         let encodedPolyline = '';
         let areaBounds = null;
 
-        // Handle drawing created
         map.on('draw:created', function(e) {
             drawnItems.clearLayers();
             drawnItems.addLayer(e.layer);
-            drawnPolygon = e.layer;
 
-            // Get coordinates
             let coords;
             if (e.layerType === 'rectangle') {
-                const bounds = e.layer.getBounds();
-                coords = [
-                    bounds.getNorthWest(),
-                    bounds.getNorthEast(),
-                    bounds.getSouthEast(),
-                    bounds.getSouthWest(),
-                    bounds.getNorthWest() // Close the polygon
-                ];
+                const b = e.layer.getBounds();
+                coords = [b.getNorthWest(), b.getNorthEast(), b.getSouthEast(), b.getSouthWest(), b.getNorthWest()];
             } else {
                 coords = e.layer.getLatLngs()[0];
-                // Close polygon if not already closed
-                if (coords[0].lat !== coords[coords.length-1].lat ||
-                    coords[0].lng !== coords[coords.length-1].lng) {
+                if (coords[0].lat !== coords[coords.length-1].lat || coords[0].lng !== coords[coords.length-1].lng) {
                     coords.push(coords[0]);
                 }
             }
 
-            // Encode polyline
             encodedPolyline = encodePolyline(coords);
             areaBounds = e.layer.getBounds();
 
-            // Update UI
-            document.getElementById('areaInfo').innerHTML =
-                `<strong>✓ Area selected!</strong><br>` +
-                `<small>${coords.length - 1} points defined</small>`;
-
-            // Enable buttons
-            document.querySelectorAll('.search-btn').forEach(btn => {
-                if (!btn.classList.contains('clear-btn')) {
-                    btn.disabled = false;
-                }
-            });
-
+            document.getElementById('areaInfo').innerHTML = `<strong>✓ Area selected!</strong>`;
+            document.querySelectorAll('.search-btn:not(.clear-btn)').forEach(btn => btn.disabled = false);
             document.getElementById('instructions').style.display = 'none';
+            updateLinks();
         });
 
-        // Handle drawing edited
         map.on('draw:edited', function(e) {
             e.layers.eachLayer(function(layer) {
-                drawnPolygon = layer;
                 let coords = layer.getLatLngs()[0];
-                if (coords[0].lat !== coords[coords.length-1].lat ||
-                    coords[0].lng !== coords[coords.length-1].lng) {
+                if (coords[0].lat !== coords[coords.length-1].lat || coords[0].lng !== coords[coords.length-1].lng) {
                     coords.push(coords[0]);
                 }
                 encodedPolyline = encodePolyline(coords);
                 areaBounds = layer.getBounds();
+                updateLinks();
             });
         });
 
-        // Clear button
         document.getElementById('clearBtn').addEventListener('click', function() {
             drawnItems.clearLayers();
-            drawnPolygon = null;
             encodedPolyline = '';
             areaBounds = null;
-
-            document.querySelectorAll('.search-btn').forEach(btn => {
-                if (!btn.classList.contains('clear-btn')) {
-                    btn.disabled = true;
-                }
-            });
-            document.getElementById('areaInfo').innerHTML = '👆 Draw a shape on the map to define your search area';
+            document.querySelectorAll('.search-btn:not(.clear-btn)').forEach(btn => btn.disabled = true);
+            document.getElementById('areaInfo').innerHTML = '👆 Draw a shape on the map';
             document.getElementById('instructions').style.display = 'block';
+            document.getElementById('urlBox').style.display = 'none';
         });
 
-        // Generate Rightmove URL
+        // URL Generators - matching EXACTLY what user provided
+
         function getRightmoveUrl() {
             if (!encodedPolyline) return null;
-
-            // Rightmove format: USERDEFINEDAREA^{"polylines":"<encoded>"}
-            const polylineData = JSON.stringify({ polylines: encodedPolyline });
-            const locationId = 'USERDEFINEDAREA^' + polylineData;
-
+            // Format from user: USERDEFINEDAREA%5E%7B%22polylines%22%3A%22...%22%7D
+            const polyData = '{"polylines":"' + encodedPolyline + '"}';
             let url = 'https://www.rightmove.co.uk/property-for-sale/find.html';
-            url += '?locationIdentifier=' + encodeURIComponent(locationId);
+            url += '?locationIdentifier=' + encodeURIComponent('USERDEFINEDAREA^' + polyData);
             url += '&maxPrice=550000';
             url += '&minBedrooms=3';
-            url += '&propertyTypes=detached,semi-detached,terraced,bungalow';
-            url += '&mustHave=garden,parking';
-            url += '&dontShow=newHome,sharedOwnership,retirement,auction';
+            url += '&propertyTypes=detached%2Csemi-detached%2Cterraced%2Cbungalow';
+            url += '&mustHave=garden%2Cparking';
+            url += '&dontShow=newHome%2CsharedOwnership%2Cretirement%2Cauction';
             url += '&tenure=freehold';
-            url += '&sortType=6'; // Most recent
+            url += '&sortType=6';
             url += '&channel=BUY';
-
             return url;
         }
 
-        // Generate Zoopla URL - matching their exact working format
         function getZooplaUrl() {
             if (!encodedPolyline || !areaBounds) return null;
-
             const chainFree = document.getElementById('chainFree').checked;
 
-            // Zoopla needs polyenc to be double-encoded
+            // Zoopla format from user - polyenc is double-encoded
+            // Their URL had: polyenc=cvlxHkj%257C%2540cnK... which decodes to cvlxHkj%7C%40cnK...
             const polyenc = encodeURIComponent(encodeURIComponent(encodedPolyline));
 
             let url = 'https://www.zoopla.co.uk/for-sale/houses/map/';
@@ -352,23 +247,18 @@
             url += '&is_retirement_home=false';
             url += '&is_shared_ownership=false';
             url += '&is_auction=false';
-            if (chainFree) {
-                url += '&chain_free=true';
-            }
+            if (chainFree) url += '&chain_free=true';
             url += '&polyenc=' + polyenc;
             url += '&radius=0';
             url += '&draw=true';
-            url += '&map_app=true';
             url += '&search_source=for-sale';
-            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + ',' + areaBounds.getSouth().toFixed(6) + ',' + areaBounds.getEast().toFixed(6) + ',' + areaBounds.getWest().toFixed(6);
-
+            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + '%2C' + areaBounds.getSouth().toFixed(6) + '%2C' + areaBounds.getEast().toFixed(6) + '%2C' + areaBounds.getWest().toFixed(6);
             return url;
         }
 
-        // Generate OnTheMarket URL
         function getOTMUrl() {
             if (!encodedPolyline) return null;
-
+            // OnTheMarket format from user
             let url = 'https://www.onthemarket.com/for-sale/property/map/';
             url += '?min-bedrooms=3';
             url += '&max-price=550000';
@@ -382,11 +272,21 @@
             url += '&new-home-flag=F';
             url += '&polygons0=' + encodeURIComponent(encodedPolyline);
             url += '&view=map-list';
-
             return url;
         }
 
-        // Search button handlers
+        function updateLinks() {
+            const rm = getRightmoveUrl();
+            const zp = getZooplaUrl();
+            const otm = getOTMUrl();
+
+            document.getElementById('rmLink').href = rm || '#';
+            document.getElementById('zpLink').href = zp || '#';
+            document.getElementById('otmLink').href = otm || '#';
+            document.getElementById('urlBox').style.display = 'block';
+        }
+
+        // Button handlers
         document.getElementById('searchRightmove').addEventListener('click', function() {
             const url = getRightmoveUrl();
             if (url) window.open(url, '_blank');
@@ -402,45 +302,33 @@
             if (url) window.open(url, '_blank');
         });
 
-        // Search ALL - open all three immediately (browsers may block some)
         document.getElementById('searchAll').addEventListener('click', function() {
+            // Open all three - use the direct links as fallback
             const rm = getRightmoveUrl();
             const zp = getZooplaUrl();
             const otm = getOTMUrl();
 
-            // Open all three - if browser blocks popups, user will see warning
-            if (rm) {
-                const w1 = window.open(rm, '_blank');
-            }
-            if (zp) {
-                const w2 = window.open(zp, '_blank');
-            }
-            if (otm) {
-                const w3 = window.open(otm, '_blank');
+            // Try to open all three
+            const w1 = window.open(rm, 'rightmove');
+            const w2 = window.open(zp, 'zoopla');
+            const w3 = window.open(otm, 'onthemarket');
+
+            // If any blocked, show message
+            if (!w1 || !w2 || !w3) {
+                alert('Some popups were blocked. Use the direct links below the buttons instead.');
             }
         });
 
-        // Add reference markers for key locations
-        const markers = [
-            { lat: 51.443, lng: 0.321, name: 'Ebbsfleet International' },
-            { lat: 51.442, lng: 0.368, name: 'Gravesend' },
-            { lat: 51.388, lng: 0.367, name: 'Meopham' },
-            { lat: 51.395, lng: 0.300, name: 'Longfield' },
-            { lat: 51.393, lng: 0.478, name: 'Strood' },
-            { lat: 51.389, lng: 0.506, name: 'Rochester' },
-            { lat: 51.330, lng: 0.450, name: 'Snodland' },
-            { lat: 51.375, lng: 0.460, name: 'Cuxton' },
-            { lat: 51.300, lng: 0.475, name: 'Aylesford' },
-        ];
-
-        markers.forEach(m => {
-            L.circleMarker([m.lat, m.lng], {
-                radius: 6,
-                fillColor: '#3388ff',
-                color: '#fff',
-                weight: 2,
-                fillOpacity: 0.8
-            }).addTo(map).bindTooltip(m.name, { permanent: false });
+        // Reference markers
+        [
+            [51.443, 0.321, 'Ebbsfleet'], [51.442, 0.368, 'Gravesend'],
+            [51.388, 0.367, 'Meopham'], [51.395, 0.300, 'Longfield'],
+            [51.393, 0.478, 'Strood'], [51.389, 0.506, 'Rochester'],
+            [51.330, 0.450, 'Snodland'], [51.375, 0.460, 'Cuxton']
+        ].forEach(m => {
+            L.circleMarker([m[0], m[1]], {
+                radius: 5, fillColor: '#3388ff', color: '#fff', weight: 2, fillOpacity: 0.8
+            }).addTo(map).bindTooltip(m[2]);
         });
     </script>
 </body>
