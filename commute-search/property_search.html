@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Property Search - Draw Your Area</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        #map { height: 100vh; width: 100%; }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 320px;
+        }
+
+        h2 { margin-bottom: 10px; font-size: 18px; }
+
+        .filters { margin-bottom: 15px; font-size: 13px; color: #666; }
+        .filters div { margin: 3px 0; }
+
+        .search-buttons { display: flex; flex-direction: column; gap: 8px; }
+
+        .search-btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-rightmove { background: #00DEB6; color: #1a1a1a; }
+        .btn-zoopla { background: #8046F1; color: white; }
+        .btn-otm { background: #2C3E50; color: white; }
+        .btn-all { background: #E74C3C; color: white; }
+
+        .search-btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .area-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .clear-btn {
+            background: #ccc;
+            color: #333;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="controls">
+        <h2>Property Search</h2>
+
+        <div class="filters">
+            <div><strong>Your filters:</strong></div>
+            <div>3+ bedrooms, 2+ bathrooms</div>
+            <div>Max price: £550,000</div>
+            <div>Must have: Garage/parking, Garden</div>
+            <div>Freehold only</div>
+            <div>Excludes: Auction, Retirement, Schemes, New builds</div>
+        </div>
+
+        <div class="search-buttons">
+            <button class="search-btn btn-all" id="searchAll" disabled>
+                🔍 Search ALL Sites
+            </button>
+            <button class="search-btn btn-rightmove" id="searchRightmove" disabled>
+                🏠 Rightmove
+            </button>
+            <button class="search-btn btn-zoopla" id="searchZoopla" disabled>
+                🏡 Zoopla
+            </button>
+            <button class="search-btn btn-otm" id="searchOTM" disabled>
+                🏘️ OnTheMarket
+            </button>
+        </div>
+
+        <div class="area-info" id="areaInfo">
+            Draw a shape on the map to define your search area
+        </div>
+
+        <button class="search-btn clear-btn" id="clearBtn">
+            🗑️ Clear & Start Over
+        </button>
+    </div>
+
+    <div class="instructions" id="instructions">
+        👆 Click the polygon tool on the left, then click points on the map to draw your search area
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script>
+        // Initialize map centered on Kent/Essex area
+        const map = L.map('map').setView([51.4, 0.4], 10);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Drawing layer
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        // Drawing controls
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    shapeOptions: { color: '#E74C3C', weight: 3 }
+                },
+                rectangle: {
+                    shapeOptions: { color: '#E74C3C', weight: 3 }
+                },
+                circle: false,
+                circlemarker: false,
+                marker: false,
+                polyline: false
+            },
+            edit: {
+                featureGroup: drawnItems
+            }
+        });
+        map.addControl(drawControl);
+
+        // Current drawn area
+        let currentArea = null;
+        let areaCenter = null;
+        let areaName = '';
+
+        // Handle drawing
+        map.on('draw:created', function(e) {
+            drawnItems.clearLayers();
+            drawnItems.addLayer(e.layer);
+            currentArea = e.layer;
+
+            // Get center of drawn area
+            const bounds = e.layer.getBounds();
+            areaCenter = bounds.getCenter();
+
+            // Reverse geocode to get area name
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${areaCenter.lat}&lon=${areaCenter.lng}&format=json`)
+                .then(r => r.json())
+                .then(data => {
+                    const addr = data.address;
+                    areaName = addr.village || addr.town || addr.city || addr.hamlet || addr.suburb || '';
+                    const county = addr.county || '';
+                    document.getElementById('areaInfo').innerHTML =
+                        `<strong>Search area:</strong> ${areaName}${county ? ', ' + county : ''}<br>` +
+                        `<small>Center: ${areaCenter.lat.toFixed(4)}, ${areaCenter.lng.toFixed(4)}</small>`;
+                })
+                .catch(() => {
+                    document.getElementById('areaInfo').innerHTML =
+                        `<strong>Area selected</strong><br>` +
+                        `<small>Center: ${areaCenter.lat.toFixed(4)}, ${areaCenter.lng.toFixed(4)}</small>`;
+                });
+
+            // Enable buttons
+            document.querySelectorAll('.search-btn').forEach(btn => {
+                if (!btn.classList.contains('clear-btn')) {
+                    btn.disabled = false;
+                }
+            });
+
+            document.getElementById('instructions').style.display = 'none';
+        });
+
+        // Clear button
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            drawnItems.clearLayers();
+            currentArea = null;
+            areaCenter = null;
+            document.querySelectorAll('.search-btn').forEach(btn => {
+                if (!btn.classList.contains('clear-btn')) {
+                    btn.disabled = true;
+                }
+            });
+            document.getElementById('areaInfo').innerHTML = 'Draw a shape on the map to define your search area';
+            document.getElementById('instructions').style.display = 'block';
+        });
+
+        // Search filters (your requirements)
+        const filters = {
+            minBeds: 3,
+            maxPrice: 550000,
+            mustHave: ['garden', 'parking'],
+            exclude: ['newHome', 'retirement', 'sharedOwnership', 'auction'],
+            tenure: 'freehold',
+            propertyTypes: ['detached', 'semi-detached', 'terraced', 'bungalow']
+        };
+
+        // Generate Rightmove URL
+        function getRightmoveUrl() {
+            if (!areaCenter) return null;
+
+            // Rightmove uses location search
+            const searchTerm = areaName || `${areaCenter.lat},${areaCenter.lng}`;
+            let url = `https://www.rightmove.co.uk/property-for-sale/find.html`;
+            url += `?searchLocation=${encodeURIComponent(searchTerm)}`;
+            url += `&useLocationIdentifier=false`;
+            url += `&radius=3.0`; // 3 mile radius from center
+            url += `&minBedrooms=${filters.minBeds}`;
+            url += `&maxPrice=${filters.maxPrice}`;
+            url += `&propertyTypes=${filters.propertyTypes.join(',')}`;
+            url += `&mustHave=${filters.mustHave.join(',')}`;
+            url += `&dontShow=${filters.exclude.join(',')}`;
+            url += `&tenure=${filters.tenure}`;
+
+            return url;
+        }
+
+        // Generate Zoopla URL
+        function getZooplaUrl() {
+            if (!areaCenter) return null;
+
+            const searchTerm = areaName || 'area';
+            let url = `https://www.zoopla.co.uk/for-sale/property/${searchTerm.toLowerCase().replace(/\s+/g, '-')}/`;
+            url += `?beds_min=${filters.minBeds}`;
+            url += `&price_max=${filters.maxPrice}`;
+            url += `&property_sub_type=detached,semi_detached,terraced,bungalow`;
+            url += `&feature=has_garden,has_parking`;
+            url += `&tenure=freehold`;
+            url += `&new_homes=exclude`;
+            url += `&is_retirement_home=false`;
+            url += `&is_shared_ownership=false`;
+            url += `&is_auction=false`;
+
+            return url;
+        }
+
+        // Generate OnTheMarket URL
+        function getOTMUrl() {
+            if (!areaCenter) return null;
+
+            const searchTerm = areaName || 'area';
+            let url = `https://www.onthemarket.com/for-sale/property/${searchTerm.toLowerCase().replace(/\s+/g, '-')}/`;
+            url += `?min-bedrooms=${filters.minBeds}`;
+            url += `&max-price=${filters.maxPrice}`;
+
+            return url;
+        }
+
+        // Search button handlers
+        document.getElementById('searchRightmove').addEventListener('click', function() {
+            const url = getRightmoveUrl();
+            if (url) window.open(url, '_blank');
+        });
+
+        document.getElementById('searchZoopla').addEventListener('click', function() {
+            const url = getZooplaUrl();
+            if (url) window.open(url, '_blank');
+        });
+
+        document.getElementById('searchOTM').addEventListener('click', function() {
+            const url = getOTMUrl();
+            if (url) window.open(url, '_blank');
+        });
+
+        document.getElementById('searchAll').addEventListener('click', function() {
+            const rm = getRightmoveUrl();
+            const zp = getZooplaUrl();
+            const otm = getOTMUrl();
+
+            if (rm) window.open(rm, '_blank');
+            setTimeout(() => { if (zp) window.open(zp, '_blank'); }, 300);
+            setTimeout(() => { if (otm) window.open(otm, '_blank'); }, 600);
+        });
+
+        // Add some reference markers for key locations
+        const markers = [
+            { lat: 51.443, lng: 0.321, name: 'Ebbsfleet International' },
+            { lat: 51.442, lng: 0.368, name: 'Gravesend' },
+            { lat: 51.388, lng: 0.367, name: 'Meopham' },
+            { lat: 51.395, lng: 0.300, name: 'Longfield' },
+            { lat: 51.393, lng: 0.478, name: 'Strood' },
+        ];
+
+        markers.forEach(m => {
+            L.circleMarker([m.lat, m.lng], {
+                radius: 6,
+                fillColor: '#3388ff',
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 0.8
+            }).addTo(map).bindTooltip(m.name);
+        });
+    </script>
+</body>
+</html>
