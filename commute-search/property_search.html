@@ -40,6 +40,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
@@ -51,7 +52,7 @@
         .btn-rightmove { background: #00DEB6; color: #1a1a1a; }
         .btn-zoopla { background: #8046F1; color: white; }
         .btn-otm { background: #2C3E50; color: white; }
-        .btn-all { background: #E74C3C; color: white; }
+        .btn-all { background: #E74C3C; color: white; font-size: 16px; padding: 15px; }
 
         .search-btn:hover:not(:disabled) { filter: brightness(1.1); }
 
@@ -94,6 +95,13 @@
             cursor: pointer;
             font-size: 13px;
         }
+
+        .popup-warning {
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -119,8 +127,9 @@
 
         <div class="search-buttons">
             <button class="search-btn btn-all" id="searchAll" disabled>
-                🔍 Search ALL Sites
+                🔍 SEARCH ALL 3 SITES
             </button>
+            <div class="popup-warning">If only 1 opens, allow popups for this page</div>
             <button class="search-btn btn-rightmove" id="searchRightmove" disabled>
                 🏠 Rightmove
             </button>
@@ -186,8 +195,8 @@
             return encoded;
         }
 
-        // Initialize map centered on Kent/Essex area
-        const map = L.map('map').setView([51.4, 0.4], 10);
+        // Initialize map centered on Kent area (Gravesend/Meopham/Rochester area)
+        const map = L.map('map').setView([51.38, 0.40], 11);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
@@ -320,14 +329,14 @@
             return url;
         }
 
-        // Generate Zoopla URL
+        // Generate Zoopla URL - matching their exact working format
         function getZooplaUrl() {
             if (!encodedPolyline || !areaBounds) return null;
 
             const chainFree = document.getElementById('chainFree').checked;
 
-            // Zoopla needs the polyenc double-encoded and bounds
-            const polyenc = encodeURIComponent(encodedPolyline);
+            // Zoopla needs polyenc to be double-encoded
+            const polyenc = encodeURIComponent(encodeURIComponent(encodedPolyline));
 
             let url = 'https://www.zoopla.co.uk/for-sale/houses/map/';
             url += '?beds_min=3';
@@ -349,7 +358,9 @@
             url += '&polyenc=' + polyenc;
             url += '&radius=0';
             url += '&draw=true';
-            url += '&bounds=' + areaBounds.getNorth() + ',' + areaBounds.getSouth() + ',' + areaBounds.getEast() + ',' + areaBounds.getWest();
+            url += '&map_app=true';
+            url += '&search_source=for-sale';
+            url += '&bounds=' + areaBounds.getNorth().toFixed(6) + ',' + areaBounds.getSouth().toFixed(6) + ',' + areaBounds.getEast().toFixed(6) + ',' + areaBounds.getWest().toFixed(6);
 
             return url;
         }
@@ -391,17 +402,25 @@
             if (url) window.open(url, '_blank');
         });
 
+        // Search ALL - open all three immediately (browsers may block some)
         document.getElementById('searchAll').addEventListener('click', function() {
             const rm = getRightmoveUrl();
             const zp = getZooplaUrl();
             const otm = getOTMUrl();
 
-            if (rm) window.open(rm, '_blank');
-            setTimeout(() => { if (zp) window.open(zp, '_blank'); }, 300);
-            setTimeout(() => { if (otm) window.open(otm, '_blank'); }, 600);
+            // Open all three - if browser blocks popups, user will see warning
+            if (rm) {
+                const w1 = window.open(rm, '_blank');
+            }
+            if (zp) {
+                const w2 = window.open(zp, '_blank');
+            }
+            if (otm) {
+                const w3 = window.open(otm, '_blank');
+            }
         });
 
-        // Add some reference markers for key locations
+        // Add reference markers for key locations
         const markers = [
             { lat: 51.443, lng: 0.321, name: 'Ebbsfleet International' },
             { lat: 51.442, lng: 0.368, name: 'Gravesend' },
@@ -410,6 +429,8 @@
             { lat: 51.393, lng: 0.478, name: 'Strood' },
             { lat: 51.389, lng: 0.506, name: 'Rochester' },
             { lat: 51.330, lng: 0.450, name: 'Snodland' },
+            { lat: 51.375, lng: 0.460, name: 'Cuxton' },
+            { lat: 51.300, lng: 0.475, name: 'Aylesford' },
         ];
 
         markers.forEach(m => {
